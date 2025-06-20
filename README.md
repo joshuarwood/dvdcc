@@ -1,4 +1,4 @@
-# dvdpp
+# dvdcc
 C++ interface for DVD drives
 
 # Goal
