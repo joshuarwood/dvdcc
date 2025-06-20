@@ -30,6 +30,7 @@ int main(void) {
     Dvd dvd("/dev/sr0");
     printf("Drive model: %s\n", dvd.model);
     printf("timeout:     %d\n", dvd.timeout);
+    dvd.Stop(true);
 
     return 0;
 
@@ -48,8 +49,8 @@ int main(void) {
 
     int fd = open("/dev/sr0", O_RDONLY | O_NONBLOCK);
 
-    //drive_info(fd, 1, true);
-    drive_state(fd, false, 1, true);
+    //DriveInfo(fd, 1, true);
+    DriveState(fd, false, 1, true);
 
     close(fd);
 

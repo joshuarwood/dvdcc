@@ -37,7 +37,7 @@ u_int8_t MMC_READ_12 = 0xA8;
 u_int32_t CACHE_SIZE = 80 * 2064;
 u_int32_t HITACHI_MEM_BASE = 0x80000000;
 
-int execute_command(int fd, unsigned char *cmd, unsigned char *buffer,
+int ExecuteCommand(int fd, unsigned char *cmd, unsigned char *buffer,
                     int buflen, int timeout, bool verbose) {
   /* Sends a command to the DVD drive using Linux API
    *
@@ -67,7 +67,7 @@ int execute_command(int fd, unsigned char *cmd, unsigned char *buffer,
   cgc.timeout = timeout * 1000;
 
   if (verbose) {
-    printf("dvdcc:commands:execute_command() Executing MMC command");
+    printf("dvdcc:commands:ExecuteCommand() Executing MMC command");
     for (int i=0; i<6; i++) printf(" %02x%02x", cgc.cmd[2*i], cgc.cmd[2*i+1]);
       printf("\n");
   }
@@ -75,14 +75,14 @@ int execute_command(int fd, unsigned char *cmd, unsigned char *buffer,
   int status = ioctl(fd, CDROM_SEND_PACKET, &cgc);
 
   if (verbose)
-    printf("dvdcc:commands:execute_command() Sense data %02X/%02X/%02X (status %d)\n",
+    printf("dvdcc:commands:ExecuteCommand() Sense data %02X/%02X/%02X (status %d)\n",
            cgc.sense->sense_key, cgc.sense->asc, cgc.sense->ascq, status);
 
   return status;
 
-}; // END execute_command()
+}; // END ExecuteCommand()
 
-int read_sectors(int fd, unsigned char *buffer, int sector, int sectors, bool streaming, int timeout, bool verbose) {
+int DriveReadSectors(int fd, unsigned char *buffer, int sector, int sectors, bool streaming, int timeout, bool verbose) {
   /* Read 2048 byte data sectors from the drive. These do not include the first
    * 12 bytes (ID, IED, CPR_MAI) or last 4 bytes (EDC) found in raw sectors.
    *
@@ -115,11 +115,11 @@ int read_sectors(int fd, unsigned char *buffer, int sector, int sectors, bool st
   cmd[ 9] = (unsigned char) (sectors & 0x000000FF);         // sectors LSB
   cmd[10] = streaming ? 0x80 : 0;                           // streaming bit
 
-  return execute_command(fd, cmd, buffer, sectors * 2048, timeout, verbose);
+  return ExecuteCommand(fd, cmd, buffer, sectors * 2048, timeout, verbose);
 
-}; // END read_sectors()
+}; // END DriveReadSectors()
 
-int read_raw_bytes(int fd, unsigned char *buffer, int offset, int nbyte, int timeout, bool verbose) {
+int DriveReadRawBytes(int fd, unsigned char *buffer, int offset, int nbyte, int timeout, bool verbose) {
   /* Reads raw bytes from the drive cache. This cache consists of 2064 byte
    * raw sectors with ID, IED, CPR_MAI, USER DATA, and EDC fields.
    *
@@ -161,11 +161,11 @@ int read_raw_bytes(int fd, unsigned char *buffer, int offset, int nbyte, int tim
   cmd[10] = (unsigned char)((  nbyte & 0xFF00) >> 8);      // nbyte MSB
   cmd[11] = (unsigned char) (  nbyte & 0x00FF);            // nbyte LSB
 
-  return execute_command(fd, cmd, buffer, nbyte, timeout, verbose);
+  return ExecuteCommand(fd, cmd, buffer, nbyte, timeout, verbose);
 
-}; // END read_raw_bytes()
+}; // END DriveReadRawBytes()
 
-int drive_info(int fd, char *model_str, int timeout, bool verbose) {
+int DriveInfo(int fd, char *model_str, int timeout, bool verbose) {
   /* Retrieves the drive model string as vendor/prod_id/prod_rev.
    *
    * Args:
@@ -186,7 +186,7 @@ int drive_info(int fd, char *model_str, int timeout, bool verbose) {
   cmd[0] = SPC_INQUIRY;
   cmd[4] = buflen;
 
-  int status = execute_command(fd, cmd, buffer, buflen, timeout, verbose);
+  int status = ExecuteCommand(fd, cmd, buffer, buflen, timeout, verbose);
 
   char *vendor = strndup((char *)&buffer[8], 8);
   char *prod_id = strndup((char *)&buffer[16], 16);
@@ -196,9 +196,9 @@ int drive_info(int fd, char *model_str, int timeout, bool verbose) {
 
   return status;
 
-}; // END drive_model()
+}; // END DriveInfo()
 
-int drive_state(int fd, bool state, int timeout, bool verbose) {
+int DriveState(int fd, bool state, int timeout, bool verbose) {
   /* Toggles the drive state where true = spinning, false = stopped.
    *
    * Args:
@@ -220,8 +220,8 @@ int drive_state(int fd, bool state, int timeout, bool verbose) {
   cmd[0] = 0x1B;
   cmd[4] = (unsigned char)state;
 
-  return execute_command(fd, cmd, buffer, buflen, timeout, verbose);
+  return ExecuteCommand(fd, cmd, buffer, buflen, timeout, verbose);
 
-}; // END drive_state()
+}; // END DriveState()
 
 #endif // DVDCC_COMMANDS_H_

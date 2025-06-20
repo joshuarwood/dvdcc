@@ -55,7 +55,7 @@ Dvd::Dvd(const char *path, int timeout = 1, bool verbose = false) : timeout(time
   fd = open(path, O_RDONLY | O_NONBLOCK);
 
   // read and store the model string
-  int status = drive_info(fd, model, timeout, verbose);
+  int status = DriveInfo(fd, model, timeout, verbose);
   if (status != 0) {
     printf("dvdcc:devices:Dvd() Could not determine drive model for %s\n", path);
     printf("dvdcc:devices:Dvd() Exiting...\n");
@@ -76,7 +76,7 @@ int Dvd::Start(bool verbose = false) {
   if (verbose)
     printf("dvdcc:devices:Dvd() Starting the drive.\n");
 
-  return drive_state(fd, true, timeout, verbose);
+  return DriveState(fd, true, timeout, verbose);
 
 }; // END Dvd::Start()
 
@@ -92,7 +92,7 @@ int Dvd::Stop(bool verbose = false) {
   if (verbose)
     printf("dvdcc:devices:Dvd() Stopping the drive.\n");
 
-  return drive_state(fd, true, timeout, verbose);
+  return DriveState(fd, true, timeout, verbose);
 
 }; // END Dvd::Stop()
 
