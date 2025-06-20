@@ -149,16 +149,3 @@ int drive_state(int fd, bool state, int timeout, bool verbose) {
 
     return status;
 };
-
-
-int main(void) {
-
-    int fd = open("/dev/sr0", O_RDONLY | O_NONBLOCK);
-
-    drive_info(fd, 1, true);
-    drive_state(fd, false, 1, true);
-
-    close(fd);
-
-    return 0;
-};
