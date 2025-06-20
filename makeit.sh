@@ -1,1 +1,1 @@
-g++ -o test main.cpp -Iinclude
+g++ -o test main.cc -Iinclude

@@ -113,7 +113,7 @@ int read_raw_bytes(int fd, int offset, int nbyte, int timeout, bool verbose) {
     return status;
 };
 
-int drive_info(int fd, int timeout, bool verbose) {
+int drive_info(int fd, char *model_str, int timeout, bool verbose) {
 
     const int buflen = 36;
     unsigned char cmd[12], buffer[buflen];
@@ -130,7 +130,7 @@ int drive_info(int fd, int timeout, bool verbose) {
     char *prod_id = strndup((char *)&buffer[16], 16);
     char *prod_rev = strndup((char *)&buffer[32], 4);
 
-    printf("Drive model: %s/%s/%s\n", vendor, prod_id, prod_rev);
+    sprintf(model_str, "%s/%s/%s", vendor, prod_id, prod_rev);
 
     return status;
 };

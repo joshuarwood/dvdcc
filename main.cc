@@ -21,10 +21,17 @@
  */
 
 #include "dvdcc/cypher.h"
+#include "dvdcc/devices.h"
 #include "dvdcc/ecma_267.h"
 #include "dvdcc/commands.h"
 
 int main(void) {
+
+    Dvd dvd("/dev/sr0");
+    printf("Drive model: %s\n", dvd.model);
+    printf("timeout:     %d\n", dvd.timeout);
+
+    return 0;
 
     Cypher cypher(0x180, 2048);
     printf(" cypher[:10] = ");
@@ -41,7 +48,7 @@ int main(void) {
 
     int fd = open("/dev/sr0", O_RDONLY | O_NONBLOCK);
 
-    drive_info(fd, 1, true);
+    //drive_info(fd, 1, true);
     drive_state(fd, false, 1, true);
 
     close(fd);
