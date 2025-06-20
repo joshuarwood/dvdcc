@@ -39,47 +39,47 @@ u_int32_t HITACHI_MEM_BASE = 0x80000000;
 
 int execute_command(int fd, unsigned char *cmd, unsigned char *buffer,
                     int buflen, int timeout, bool verbose) {
-    /* Sends a command to the DVD drive using Linux API
-     *
-     * Args:
-     *     fd (int): the file descriptor of the drive
-     *     cmd (unsigned char *): pointer to the 12 command bytes
-     *     buffer (unsigned char *): pointer to the buffer where bytes
-     *                               returned by the command are placed
-     *     buflen (int): length of the buffer
-     *     timeout (int): timeout duration in integer seconds
-     *     verbose (bool): set to true to print more details to stdout
-     *
-     * Returns:
-     *     (int): the command status where -1 indicates an error
-     */
-    struct cdrom_generic_command cgc;
-    struct request_sense sense;
+  /* Sends a command to the DVD drive using Linux API
+   *
+   * Args:
+   *     fd (int): the file descriptor of the drive
+   *     cmd (unsigned char *): pointer to the 12 command bytes
+   *     buffer (unsigned char *): pointer to the buffer where bytes
+   *                               returned by the command are placed
+   *     buflen (int): length of the buffer
+   *     timeout (int): timeout duration in integer seconds
+   *     verbose (bool): set to true to print more details to stdout
+   *
+   * Returns:
+   *     (int): command status (-1 means fail)
+   */
+  struct cdrom_generic_command cgc;
+  struct request_sense sense;
 
-    memset(&cgc, 0, sizeof(cgc));
-    memset(&sense, 0, sizeof(sense));
-    memcpy(cgc.cmd, cmd, 12);
+  memset(&cgc, 0, sizeof(cgc));
+  memset(&sense, 0, sizeof(sense));
+  memcpy(cgc.cmd, cmd, 12);
 
-    cgc.buffer = buffer;
-    cgc.buflen = buflen;
-    cgc.sense = &sense;
-    cgc.data_direction = CGC_DATA_READ;
-    cgc.timeout = timeout * 1000;
+  cgc.buffer = buffer;
+  cgc.buflen = buflen;
+  cgc.sense = &sense;
+  cgc.data_direction = CGC_DATA_READ;
+  cgc.timeout = timeout * 1000;
 
-    verbose = true;
-    if (verbose) {
-        printf("Executing MMC command: ");
-        for (int i=0; i<6; i++) printf(" %02x%02x", cgc.cmd[2*i], cgc.cmd[2*i+1]);
-        printf("\n");
-    }
+  if (verbose) {
+    printf("dvdcc:commands:execute_command() Executing MMC command");
+    for (int i=0; i<6; i++) printf(" %02x%02x", cgc.cmd[2*i], cgc.cmd[2*i+1]);
+      printf("\n");
+  }
 
-    int status = ioctl(fd, CDROM_SEND_PACKET, &cgc);
+  int status = ioctl(fd, CDROM_SEND_PACKET, &cgc);
 
-    if (verbose)
-        printf("Sense data: %02X/%02X/%02X (status %d)\n",
-               cgc.sense->sense_key, cgc.sense->asc, cgc.sense->ascq, status);
+  if (verbose)
+    printf("dvdcc:commands:execute_command() Sense data %02X/%02X/%02X (status %d)\n",
+           cgc.sense->sense_key, cgc.sense->asc, cgc.sense->ascq, status);
 
-    return status;    
+  return status;
+
 };
 
 int read_raw_bytes(int fd, int offset, int nbyte, int timeout, bool verbose) {
@@ -136,20 +136,29 @@ int drive_info(int fd, char *model_str, int timeout, bool verbose) {
 };
 
 int drive_state(int fd, bool state, int timeout, bool verbose) {
+  /* Toggles the drive state where true = spinning, false = stopped.
+   *
+   * Args:
+   *     fd (int): the file descriptor of the drive
+   *     state (bool): drive state (true = spinning, false = stopped)
+   *     timeout (int): timeout duration in integer seconds
+   *     verbose (bool): set to true to print more details to stdout
+   *
+   * Returns:
+   *     (int): command status (-1 means fail)
+   */
+  const int buflen = 8;
+  unsigned char cmd[12];
+  unsigned char buffer[buflen];
 
-    const int buflen = 8;
-    unsigned char cmd[12];
-    unsigned char buffer[buflen];
+  memset(cmd, 0, 12);
+  memset(buffer, 0, buflen);
 
-    memset(cmd, 0, 12);
-    memset(buffer, 0, buflen);
+  cmd[0] = 0x1B;
+  cmd[4] = (unsigned char)state;
 
-    cmd[0] = 0x1B;
-    cmd[4] = (unsigned char)state;
+  return execute_command(fd, cmd, buffer, buflen, timeout, verbose);
 
-    int status = execute_command(fd, cmd, buffer, buflen, 1, true);
-
-    return status;
 };
 
 #endif // DVDCC_COMMANDS_H_

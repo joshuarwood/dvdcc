@@ -25,14 +25,15 @@
 #include <fcntl.h>
 #include <dvdcc/commands.h>
 
-/* Dvd class interfacing with a DVD drive. */
+/* Dvd class for interfacing with a DVD drive. */
 class Dvd {
 
  public:
    Dvd(const char *path, int timeout, bool verbose);
    ~Dvd() { close(fd); };
 
-
+   int Start(bool verbose); // start spinning the disc
+   int Stop(bool verbose);  // stop spinning the disc
 
    int fd;         // file descriptor
    int timeout;    // command timeout in seconds
@@ -48,6 +49,9 @@ Dvd::Dvd(const char *path, int timeout = 1, bool verbose = false) : timeout(time
    *     timeout (int): timeout duration in integer seconds (default: 1)
    *     verbose (bool): when true print details from drive_info() command (default: false) 
    */
+  if (verbose)
+    printf("dvdcc:devices:Dvd() Opening %s\n", path);
+
   fd = open(path, O_RDONLY | O_NONBLOCK);
 
   // read and store the model string
@@ -59,5 +63,37 @@ Dvd::Dvd(const char *path, int timeout = 1, bool verbose = false) : timeout(time
   }
 
 }; // END Dvd::Dvd()
+
+int Dvd::Start(bool verbose = false) {
+  /* Start spinning the disc.
+   *
+   * Args:
+   *     verbose (bool): when true print details from drive_state() command (default: false)
+   *
+   * Returns:
+   *     (int): command status (-1 means fail)
+   */
+  if (verbose)
+    printf("dvdcc:devices:Dvd() Starting the drive.\n");
+
+  return drive_state(fd, true, timeout, verbose);
+
+}; // END Dvd::Start()
+
+int Dvd::Stop(bool verbose = false) {
+  /* Stop spinning the disc.
+   *
+   * Args:
+   *     verbose (bool): when true print details from drive_state() command (default: false)
+   *
+   * Returns:
+   *     (int): command status (-1 means fail)
+   */
+  if (verbose)
+    printf("dvdcc:devices:Dvd() Stopping the drive.\n");
+
+  return drive_state(fd, true, timeout, verbose);
+
+}; // END Dvd::Stop()
 
 #endif // DVDCC_DEVICES_H_
