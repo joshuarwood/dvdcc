@@ -20,9 +20,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include "commands.h"
+#include "dvdcc/cypher.h"
+#include "dvdcc/ecma_267.h"
+#include "dvdcc/commands.h"
 
 int main(void) {
+
+    Cypher cypher(0x180, 2048);
+    printf(" cypher[:10] = ");
+    for (int i=0; i<10; i++)
+	    printf(" %02x", cypher.bytes[i]);
+    printf("\n");
+
+    unsigned char cmd[3] = {1, 2, 3};
+    unsigned int edc = calc_edc(cmd, 3);
+    printf("\nedc is 0x%x\n", edc);
+
+    return 0;
+
 
     int fd = open("/dev/sr0", O_RDONLY | O_NONBLOCK);
 

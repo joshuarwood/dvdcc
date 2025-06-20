@@ -19,6 +19,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+#ifndef DVDCC_ECMA267_H_
+#define DVDCC_ECMA267_H_
 
 // table of pre-computed 32 bit CRC results of all possible bytes 0-255 using polynomial 0x80000011
 unsigned int table[256] = {
@@ -77,3 +79,5 @@ unsigned int calc_edc(unsigned char *bytes, int size) {
 
     return crc;
 };
+
+#endif // DVDCC_ECMA267_H_
