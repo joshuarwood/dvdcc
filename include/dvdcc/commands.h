@@ -80,60 +80,123 @@ int execute_command(int fd, unsigned char *cmd, unsigned char *buffer,
 
   return status;
 
-};
+}; // END execute_command()
 
-int read_raw_bytes(int fd, int offset, int nbyte, int timeout, bool verbose) {
+int read_sectors(int fd, unsigned char *buffer, int sector, int sectors, bool streaming, int timeout, bool verbose) {
+  /* Read 2048 byte data sectors from the drive. These do not include the first
+   * 12 bytes (ID, IED, CPR_MAI) or last 4 bytes (EDC) found in raw sectors.
+   *
+   * Args:
+   *     fd (int): file descriptor
+   *     buffer (unsigned char *): buffer for returning raw bytes
+   *     sector (int): starting sector
+   *     sectors (int): number of sectors to read starting from sector
+   *     streaming (bool): use cache streaming mode when true.
+   *                       otherwise force direct access
+   *     timeout (int): timeout duration in integer seconds
+   *     verbose (bool): set to True to print more info
+   *
+   * Returns:
+   *     (int): command status (-1 means fail)
+   */
+  unsigned char cmd[12];
 
-    u_int32_t address = HITACHI_MEM_BASE + offset;
-    unsigned char buffer[65536];
+  memset(cmd, 0, 12);
 
-    if ((nbyte <= 0) || (nbyte > 65535)) {
-        printf("read_raw_bytes(): invalid nbyte (valid: 1 - 65535)\n");
-        exit(0);
-    }
+  cmd[ 0] = MMC_READ_12;                                    // read command
+  cmd[ 1] = streaming ? 0 : 0x08;                           // force unit access bit
+  cmd[ 2] = (unsigned char)(( sector & 0xFF000000) >> 24);  // sector MSB
+  cmd[ 3] = (unsigned char)(( sector & 0x00FF0000) >> 16);  // sector continued
+  cmd[ 4] = (unsigned char)(( sector & 0x0000FF00) >> 8);   // sector continued
+  cmd[ 5] = (unsigned char) ( sector & 0x000000FF);         // sector LSB
+  cmd[ 6] = (unsigned char)((sectors & 0xFF000000) >> 24);  // sectors MSB
+  cmd[ 7] = (unsigned char)((sectors & 0x00FF0000) >> 16);  // sectors continued
+  cmd[ 8] = (unsigned char)((sectors & 0x0000FF00) >> 8);   // sectors continued
+  cmd[ 9] = (unsigned char) (sectors & 0x000000FF);         // sectors LSB
+  cmd[10] = streaming ? 0x80 : 0;                           // streaming bit
 
-    // Note: bytes 1-3 = HIT which is likely short for HITACHI
-    unsigned char cmd[12] = {
-        0xE7,                         //  0. vendor specific command (discovered by DaveX)
-        0x48,                         //  1. H
-        0x49,                         //  2. I
-        0x54,                         //  3. T
-        0x01,                         //  4. read MCU memory sub-command
-        0,                            //  5. empty
-        (unsigned char)((address & 0xFF000000) >> 24), //  6. address MSB
-        (unsigned char)((address & 0x00FF0000) >> 16), //  7. address continued
-        (unsigned char)((address & 0x0000FF00) >> 8),  //  8. address continued
-        (unsigned char)((address & 0x000000FF)),       //  9. address LSB
-        (unsigned char)((nbyte & 0xFF00) >> 8),        // 10. nbyte MSB
-        (unsigned char)((nbyte & 0x00FF))              // 11. nbyte LSB
-    };
+  return execute_command(fd, cmd, buffer, sectors * 2048, timeout, verbose);
 
-    int status = execute_command(fd, cmd, buffer, nbyte, timeout, verbose);
+}; // END read_sectors()
 
-    return status;
-};
+int read_raw_bytes(int fd, unsigned char *buffer, int offset, int nbyte, int timeout, bool verbose) {
+  /* Reads raw bytes from the drive cache. This cache consists of 2064 byte
+   * raw sectors with ID, IED, CPR_MAI, USER DATA, and EDC fields.
+   *
+   * Note you *must* do the following before using this command:
+   *   1. Execute a read_sectors() command with streaming = True to fill the cache.
+   *   2. Ensure you're running the command with root privileges.
+   *      The command will not work with regular user privileges.
+   *
+   * Args:
+   *     fd (int): file descriptor
+   *     buffer (unsigned char *): buffer for returning raw bytes
+   *     offset (int): starting memory offset within cache
+   *     nbyte (int): number of memory bytes to read starting from offset
+   *     timeout (int, optional): command timeout in seconds
+   *     verbose (bool, optional): set to True to print more info
+   *
+   * Returns:
+   *     (int): command status (-1 means fail)
+   */
+  u_int32_t address = HITACHI_MEM_BASE + offset;
+  unsigned char cmd[12];
+
+  if ((nbyte <= 0) || (nbyte > 65535)) {
+    printf("dvdcc:commands:read_raw_bytes() invalid nbyte (valid: 1 - 65535)\n");
+    return -1;
+  }
+
+  memset(cmd, 0, 12);
+
+  cmd[ 0] = 0xE7;                                          // vendor specific command (discovered by DaveX)
+  cmd[ 1] = 0x48;                                          // H
+  cmd[ 2] = 0x49;                                          // I
+  cmd[ 3] = 0x54;                                          // T
+  cmd[ 4] = 0x01;                                          // read MCU memory sub-command
+  cmd[ 6] = (unsigned char)((address & 0xFF000000) >> 24); // address MSB
+  cmd[ 7] = (unsigned char)((address & 0x00FF0000) >> 16); // address continued
+  cmd[ 8] = (unsigned char)((address & 0x0000FF00) >> 8);  // address continued
+  cmd[ 9] = (unsigned char) (address & 0x000000FF);        // address LSB
+  cmd[10] = (unsigned char)((  nbyte & 0xFF00) >> 8);      // nbyte MSB
+  cmd[11] = (unsigned char) (  nbyte & 0x00FF);            // nbyte LSB
+
+  return execute_command(fd, cmd, buffer, nbyte, timeout, verbose);
+
+}; // END read_raw_bytes()
 
 int drive_info(int fd, char *model_str, int timeout, bool verbose) {
+  /* Retrieves the drive model string as vendor/prod_id/prod_rev.
+   *
+   * Args:
+   *     fd (int): the file descriptor of the drive
+   *     model_str (char *): the drive model string to return
+   *     timeout (int): timeout duration in integer seconds
+   *     verbose (bool): set to true to print more details to stdout
+   *
+   * Returns:
+   *     (int): command status (-1 means fail)
+   */
+  const int buflen = 36;
+  unsigned char cmd[12], buffer[buflen];
 
-    const int buflen = 36;
-    unsigned char cmd[12], buffer[buflen];
+  memset(cmd, 0, 12);
+  memset(buffer, 0, buflen);
 
-    memset(cmd, 0, 12);
-    memset(buffer, 0, buflen);
+  cmd[0] = SPC_INQUIRY;
+  cmd[4] = buflen;
 
-    cmd[0] = SPC_INQUIRY;
-    cmd[4] = buflen;
+  int status = execute_command(fd, cmd, buffer, buflen, timeout, verbose);
 
-    int status = execute_command(fd, cmd, buffer, buflen, timeout, verbose);
+  char *vendor = strndup((char *)&buffer[8], 8);
+  char *prod_id = strndup((char *)&buffer[16], 16);
+  char *prod_rev = strndup((char *)&buffer[32], 4);
 
-    char *vendor = strndup((char *)&buffer[8], 8);
-    char *prod_id = strndup((char *)&buffer[16], 16);
-    char *prod_rev = strndup((char *)&buffer[32], 4);
+  sprintf(model_str, "%s/%s/%s", vendor, prod_id, prod_rev);
 
-    sprintf(model_str, "%s/%s/%s", vendor, prod_id, prod_rev);
+  return status;
 
-    return status;
-};
+}; // END drive_model()
 
 int drive_state(int fd, bool state, int timeout, bool verbose) {
   /* Toggles the drive state where true = spinning, false = stopped.
@@ -159,6 +222,6 @@ int drive_state(int fd, bool state, int timeout, bool verbose) {
 
   return execute_command(fd, cmd, buffer, buflen, timeout, verbose);
 
-};
+}; // END drive_state()
 
 #endif // DVDCC_COMMANDS_H_
