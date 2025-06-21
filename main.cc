@@ -20,17 +20,43 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <time.h>
 #include "dvdcc/cypher.h"
+#include "dvdcc/progress.h"
 #include "dvdcc/devices.h"
 #include "dvdcc/ecma_267.h"
 #include "dvdcc/commands.h"
 
 int main(void) {
 
+  int N = 100;
+
+  Progress progress;
+  progress.Start();
+
+  for (int i=0; i<N; i++) {
+
+    sleep(1);
+    progress.Update(i, N);
+  }
+  progress.Finish();
+  return 0;
+
     Dvd dvd("/dev/sr0");
     printf("Drive model: %s\n", dvd.model);
-    printf("timeout:     %d\n", dvd.timeout);
-    dvd.Stop(true);
+    dvd.Start(true);
+
+    FILE *f = fopen("test.bin", "wb");
+
+    // write first 20 blocks to file
+    unsigned char buffer[RAW_SECTOR_SIZE * SECTORS_PER_CACHE];
+    for (int sector = 0; sector < 20 * SECTORS_PER_BLOCK; sector += SECTORS_PER_CACHE) {
+      float t0 = clock();
+      dvd.ReadRawSectorCache(sector, buffer, true);
+      printf("took %.6f sec", (clock() - t0)/CLOCKS_PER_SEC);
+      fwrite(buffer, 1, sizeof(buffer), f);
+    }
+    fclose(f);
 
     return 0;
 

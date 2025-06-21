@@ -34,7 +34,6 @@
 u_int8_t SPC_INQUIRY = 0x12;
 u_int8_t MMC_READ_12 = 0xA8;
 
-u_int32_t CACHE_SIZE = 80 * 2064;
 u_int32_t HITACHI_MEM_BASE = 0x80000000;
 
 int ExecuteCommand(int fd, unsigned char *cmd, unsigned char *buffer,
@@ -164,6 +163,33 @@ int DriveReadRawBytes(int fd, unsigned char *buffer, int offset, int nbyte, int 
   return ExecuteCommand(fd, cmd, buffer, nbyte, timeout, verbose);
 
 }; // END DriveReadRawBytes()
+
+int DriveClearCache(int fd, int sector, int timeout, bool verbose) {
+  /* Clears the drive cache by forcing a sector read with zero length.
+   *
+   * Args:
+   *     fd (int): file descriptor
+   *     sector (int): starting sector
+   *     timeout (int, optional): command timeout in seconds
+   *     verbose (bool, optional): set to True to print more info
+   *
+   * Returns:
+   *     (int): command status (-1 means fail)
+   */
+  unsigned char cmd[12];
+
+  memset(cmd, 0, 12);
+
+  cmd[0] = MMC_READ_12;                                  // read command
+  cmd[1] = 0x08;                                         // force unit access bit
+  cmd[2] = (unsigned char)((sector & 0xFF000000) >> 24); // sector MSB
+  cmd[3] = (unsigned char)((sector & 0x00FF0000) >> 16); // sector continued
+  cmd[4] = (unsigned char)((sector & 0x0000FF00) >> 8);  // sector continued
+  cmd[5] = (unsigned char) (sector & 0x000000FF);        // sector LSB
+
+  return ExecuteCommand(fd, cmd, NULL, 0, timeout, verbose);
+
+}; // END DriveClearCache()
 
 int DriveInfo(int fd, char *model_str, int timeout, bool verbose) {
   /* Retrieves the drive model string as vendor/prod_id/prod_rev.
