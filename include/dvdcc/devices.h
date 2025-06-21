@@ -30,6 +30,10 @@ unsigned int RAW_SECTOR_SIZE = 2064;
 unsigned int SECTORS_PER_BLOCK = 16;
 unsigned int SECTORS_PER_CACHE = 5 * SECTORS_PER_BLOCK;
 
+unsigned int GAMECUBE_SECTORS_NO = 712880;
+unsigned int WII_SECTORS_NO_SL = 2294912;
+unsigned int WII_SECTORS_NO_DL = 4155840;
+
 /* Dvd class for interfacing with a DVD drive. */
 class Dvd {
 
@@ -122,24 +126,20 @@ int Dvd::ReadRawSectorCache(int sector, unsigned char *buffer, bool verbose = fa
 
   // perform a streaming read with NULL buffer to fill cache with 5 blocks
   // starting from sector. Note: read the first sector to fill the full cache.
-  status = DriveReadSectors(fd, buffer, sector, 1, true, timeout, verbose);
+  if (DriveReadSectors(fd, buffer, sector, 1, true, timeout, verbose) != 0)
+    return -1;
 
   // clear the buffer contents
   memset(buffer, 0, buflen);
 
-  // read the cache in 3 steps to work around the 65535 byte cache read limit
-  status = DriveReadRawBytes(fd, buffer +         0,         0, 65535, timeout, verbose);
-  status = DriveReadRawBytes(fd, buffer +     65536,     65536, 65535, timeout, verbose);
-  status = DriveReadRawBytes(fd, buffer + 2 * 65536, 2 * 65536, 34050, timeout, verbose);
-
-  printf("starting with sector %d\n", sector);
-  for (int i=0; i<80; i++) {
-    for (int j=0; j<10; j++)
-      printf(" %02x", buffer[i * RAW_SECTOR_SIZE + j]);
-    printf("\n");
+  // read the cache in steps to work around the 65535 byte cache read limit
+  for (int i = 0; i < buflen; i += 65535) {
+    int len = i + 65535 <= buflen ? 65535 : buflen - i;
+    if (DriveReadRawBytes(fd, buffer + i, i, len, timeout, verbose) != 0)
+      return -1;
   }
 
-  return status;
+  return 0;
 
 }; // END Dvd::ReadRawSectorCache()
 

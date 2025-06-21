@@ -29,6 +29,7 @@
 
 int main(void) {
 
+  /*
   int N = 100;
 
   Progress progress;
@@ -41,24 +42,32 @@ int main(void) {
   }
   progress.Finish();
   return 0;
+  */
 
-    Dvd dvd("/dev/sr0");
-    printf("Drive model: %s\n", dvd.model);
-    dvd.Start(true);
+  // open drive
+  Dvd dvd("/dev/sr0");
+  printf("Drive model: %s\n", dvd.model);
 
-    FILE *f = fopen("test.bin", "wb");
+  // prepare to read
+  FILE *f = fopen("test.bin", "wb");
+  unsigned char buffer[RAW_SECTOR_SIZE * SECTORS_PER_CACHE];
 
-    // write first 20 blocks to file
-    unsigned char buffer[RAW_SECTOR_SIZE * SECTORS_PER_CACHE];
-    for (int sector = 0; sector < 20 * SECTORS_PER_BLOCK; sector += SECTORS_PER_CACHE) {
-      float t0 = clock();
-      dvd.ReadRawSectorCache(sector, buffer, true);
-      printf("took %.6f sec", (clock() - t0)/CLOCKS_PER_SEC);
-      fwrite(buffer, 1, sizeof(buffer), f);
-    }
-    fclose(f);
+  // start the progress bar
+  Progress progress;
+  progress.Start();
 
-    return 0;
+  // read sectors and write to file
+  dvd.Start(true);
+  for (int sector = 0; sector < GAMECUBE_SECTORS_NO; sector += SECTORS_PER_CACHE) {
+    dvd.ReadRawSectorCache(sector, buffer, false);
+    fwrite(buffer, 1, sizeof(buffer), f);
+    if (sector % 100 == 0)
+        progress.Update(sector, GAMECUBE_SECTORS_NO);
+  }
+  progress.Finish();
+  fclose(f);
+
+  return 0;
 
     Cypher cypher(0x180, 2048);
     printf(" cypher[:10] = ");
