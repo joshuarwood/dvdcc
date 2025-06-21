@@ -107,7 +107,7 @@ int Dvd::Stop(bool verbose = false) {
 }; // END Dvd::Stop()
 
 int Dvd::ReadRawSectorCache(int sector, unsigned char *buffer, bool verbose = false) {
-  /* Read all raw sectors from the 80 sector drive cache.
+  /* Read all raw sectors from the 80 sector cache.
    *
    * Args:
    *     sector (int): starting sector
@@ -124,8 +124,8 @@ int Dvd::ReadRawSectorCache(int sector, unsigned char *buffer, bool verbose = fa
   if (verbose)
     printf("dvdcc:devices:Dvd:ReadRawSectorCache() Reading from sector %d.\n", sector);
 
-  // perform a streaming read with NULL buffer to fill cache with 5 blocks
-  // starting from sector. Note: read the first sector to fill the full cache.
+  // perform a streaming read to fill the cache with 5 blocks / 80 sectors
+  // starting from sector. Note: reading first sector to fills the full cache.
   if (DriveReadSectors(fd, buffer, sector, 1, true, timeout, verbose) != 0)
     return -1;
 
