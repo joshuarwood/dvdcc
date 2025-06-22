@@ -48,7 +48,6 @@ int main(void) {
   return 0;
   */
 
-  /*
   // open drive
   Dvd dvd("/dev/sr0");
   printf("Drive model: %s\n", dvd.model);
@@ -68,11 +67,11 @@ int main(void) {
     fwrite(buffer, 1, sizeof(buffer), f);
     if (sector % 100 == 0)
         progress.Update(sector, constants::disc_sector_no["GAMECUBE"]);
+    if (sector > 10000)
+	 break;
   }
   progress.Finish();
   fclose(f);
-  */
-  //return 0;
 
     Cypher cypher(0x180, 2048);
     printf(" cypher[:10] = ");
@@ -89,8 +88,8 @@ int main(void) {
 
     int fd = open("/dev/sr0", O_RDONLY | O_NONBLOCK);
 
-    //DriveInfo(fd, 1, true);
-    commands::Spin(fd, false, 1, true);
+    //commands::Info(fd, 1, true, NULL);
+    commands::Spin(fd, false, 1, true, NULL);
 
     close(fd);
 

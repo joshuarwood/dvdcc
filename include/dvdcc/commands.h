@@ -36,7 +36,7 @@
 namespace commands {
 
 int Execute(int fd, unsigned char *cmd, unsigned char *buffer,
-	    int buflen, int timeout, bool verbose) {
+            int buflen, int timeout, bool verbose, request_sense *scsi_sense) {
   /* Sends a command to the DVD drive using Linux API
    *
    * Args:
@@ -47,6 +47,7 @@ int Execute(int fd, unsigned char *cmd, unsigned char *buffer,
    *     buflen (int): length of the buffer
    *     timeout (int): timeout duration in integer seconds
    *     verbose (bool): set to true to print more details to stdout
+   *     scsi_sense (request_sense *): pointer to SCSI sense keys
    *
    * Returns:
    *     (int): command status (-1 means fail)
@@ -76,11 +77,15 @@ int Execute(int fd, unsigned char *cmd, unsigned char *buffer,
     printf("dvdcc:commands:Execute() Sense data %02X/%02X/%02X (status %d)\n",
            cgc.sense->sense_key, cgc.sense->asc, cgc.sense->ascq, status);
 
+  if (scsi_sense)
+    memcpy(scsi_sense, &sense, sizeof(sense));
+
   return status;
 
 }; // END commands::Execute()
 
-int ReadSectors(int fd, unsigned char *buffer, int sector, int sectors, bool streaming, int timeout, bool verbose) {
+int ReadSectors(int fd, unsigned char *buffer, int sector, int sectors,
+                bool streaming, int timeout, bool verbose, request_sense *scsi_sense) {
   /* Read 2048 byte data sectors from the drive. These do not include the first
    * 12 bytes (ID, IED, CPR_MAI) or last 4 bytes (EDC) found in raw sectors.
    *
@@ -93,6 +98,7 @@ int ReadSectors(int fd, unsigned char *buffer, int sector, int sectors, bool str
    *                       otherwise force direct access
    *     timeout (int): timeout duration in integer seconds
    *     verbose (bool): set to True to print more info
+   *     scsi_sense (request_sense *): pointer to SCSI sense keys
    *
    * Returns:
    *     (int): command status (-1 means fail)
@@ -113,11 +119,12 @@ int ReadSectors(int fd, unsigned char *buffer, int sector, int sectors, bool str
   cmd[ 9] = (unsigned char) (sectors & 0x000000FF);         // sectors LSB
   cmd[10] = streaming ? 0x80 : 0;                           // streaming bit
 
-  return Execute(fd, cmd, buffer, sectors * 2048, timeout, verbose);
+  return Execute(fd, cmd, buffer, sectors * 2048, timeout, verbose, scsi_sense);
 
 }; // END commands::ReadSectors()
 
-int ReadRawBytes(int fd, unsigned char *buffer, int offset, int nbyte, int timeout, bool verbose) {
+int ReadRawBytes(int fd, unsigned char *buffer, int offset, int nbyte,
+                 int timeout, bool verbose, request_sense *scsi_sense) {
   /* Reads raw bytes from the drive cache. This cache consists of 2064 byte
    * raw sectors with ID, IED, CPR_MAI, USER DATA, and EDC fields.
    *
@@ -133,6 +140,7 @@ int ReadRawBytes(int fd, unsigned char *buffer, int offset, int nbyte, int timeo
    *     nbyte (int): number of memory bytes to read starting from offset
    *     timeout (int, optional): command timeout in seconds
    *     verbose (bool, optional): set to True to print more info
+   *     scsi_sense (request_sense *): pointer to SCSI sense keys
    *
    * Returns:
    *     (int): command status (-1 means fail)
@@ -159,11 +167,11 @@ int ReadRawBytes(int fd, unsigned char *buffer, int offset, int nbyte, int timeo
   cmd[10] = (unsigned char)((  nbyte & 0xFF00) >> 8);      // nbyte MSB
   cmd[11] = (unsigned char) (  nbyte & 0x00FF);            // nbyte LSB
 
-  return Execute(fd, cmd, buffer, nbyte, timeout, verbose);
+  return Execute(fd, cmd, buffer, nbyte, timeout, verbose, scsi_sense);
 
 }; // END commands::ReadRawBytes()
 
-int ClearCache(int fd, int sector, int timeout, bool verbose) {
+int ClearCache(int fd, int sector, int timeout, bool verbose, request_sense *scsi_sense) {
   /* Clears the drive cache by forcing a sector read with zero length.
    *
    * Args:
@@ -171,6 +179,7 @@ int ClearCache(int fd, int sector, int timeout, bool verbose) {
    *     sector (int): starting sector
    *     timeout (int, optional): command timeout in seconds
    *     verbose (bool, optional): set to True to print more info
+   *     scsi_sense (request_sense *): pointer to SCSI sense keys
    *
    * Returns:
    *     (int): command status (-1 means fail)
@@ -186,11 +195,11 @@ int ClearCache(int fd, int sector, int timeout, bool verbose) {
   cmd[4] = (unsigned char)((sector & 0x0000FF00) >> 8);  // sector continued
   cmd[5] = (unsigned char) (sector & 0x000000FF);        // sector LSB
 
-  return Execute(fd, cmd, NULL, 0, timeout, verbose);
+  return Execute(fd, cmd, NULL, 0, timeout, verbose, scsi_sense);
 
 }; // END commands::ClearCache()
 
-int Info(int fd, char *model_str, int timeout, bool verbose) {
+int Info(int fd, char *model_str, int timeout, bool verbose, request_sense *scsi_sense) {
   /* Retrieves the drive model string as vendor/prod_id/prod_rev.
    *
    * Args:
@@ -198,6 +207,7 @@ int Info(int fd, char *model_str, int timeout, bool verbose) {
    *     model_str (char *): the drive model string to return
    *     timeout (int): timeout duration in integer seconds
    *     verbose (bool): set to true to print more details to stdout
+   *     scsi_sense (request_sense *): pointer to SCSI sense keys
    *
    * Returns:
    *     (int): command status (-1 means fail)
@@ -211,7 +221,7 @@ int Info(int fd, char *model_str, int timeout, bool verbose) {
   cmd[0] = constants::SPC_INQUIRY;
   cmd[4] = buflen;
 
-  int status = Execute(fd, cmd, buffer, buflen, timeout, verbose);
+  int status = Execute(fd, cmd, buffer, buflen, timeout, verbose, scsi_sense);
 
   char *vendor = strndup((char *)&buffer[8], 8);
   char *prod_id = strndup((char *)&buffer[16], 16);
@@ -223,7 +233,7 @@ int Info(int fd, char *model_str, int timeout, bool verbose) {
 
 }; // END commands::Info()
 
-int Spin(int fd, bool state, int timeout, bool verbose) {
+int Spin(int fd, bool state, int timeout, bool verbose, request_sense *scsi_sense) {
   /* Toggles the disc spin state where true = spinning, false = stopped.
    *
    * Args:
@@ -231,6 +241,7 @@ int Spin(int fd, bool state, int timeout, bool verbose) {
    *     state (bool): drive state (true = spinning, false = stopped)
    *     timeout (int): timeout duration in integer seconds
    *     verbose (bool): set to true to print more details to stdout
+   *     scsi_sense (request_sense *): pointer to SCSI sense keys
    *
    * Returns:
    *     (int): command status (-1 means fail)
@@ -245,7 +256,7 @@ int Spin(int fd, bool state, int timeout, bool verbose) {
   cmd[0] = constants::SBC_START_STOP;
   cmd[4] = (unsigned char)state;
 
-  return Execute(fd, cmd, buffer, buflen, timeout, verbose);
+  return Execute(fd, cmd, buffer, buflen, timeout, verbose, scsi_sense);
 
 }; // END commands::Spin()
 
