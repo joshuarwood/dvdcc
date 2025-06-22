@@ -217,7 +217,7 @@ int Dvd::FindKeys(unsigned int blocks = 20, bool verbose = false) {
 
   bool found_all_cyphers = false; // set to true once we find all cyphers
 
-  printf("\nFinding DVD keys.\n\n");
+  printf("\nFinding DVD keys...\n\n");
 
   // read the first cache containing block 0
   // to get the first raw sector id
@@ -230,29 +230,19 @@ int Dvd::FindKeys(unsigned int blocks = 20, bool verbose = false) {
 
     // fill the buffer from cache whenever we're outside last cache read
     // and reset raw_sector to the beginning of the new buffer
-    if (block % constants::BLOCKS_PER_CACHE == 0) {
-      printf("reading new cache at %d\n", block);
+    if (block % constants::BLOCKS_PER_CACHE == 0)
       ReadRawSectorCache(block * constants::SECTORS_PER_BLOCK, buffer, verbose);
-    }
 
     // assign cypher if all cyphers are found, otherwise set to NULL to find a new cypher
     cypher = found_all_cyphers ? cyphers[(block - 1) % cypher_number] : NULL;
-    if (cypher)
-      printf("reusing seed %04x on block %02d\n", cypher->seed, block);
 
     for (unsigned int sub_sector = 0; sub_sector < constants::SECTORS_PER_BLOCK; sub_sector++) {
 
-      // get the raw sector for this sub sector of the block
+      // get the raw sector for this sub sector of the block from the buffer
       raw_sector = buffer + (sub_sector + block % constants::BLOCKS_PER_CACHE * constants::SECTORS_PER_BLOCK) * constants::RAW_SECTOR_SIZE;
 
       // gather error detection code for the raw sector
       raw_edc = RawSectorEdc(raw_sector);
-
-      /*
-      printf("%d %d cypher id %02d\n", RawSectorId(raw_sector), sub_sector, block);
-      for (int i=0; i<10; i++)
-        printf(" %02x", raw_sector[i]);
-      printf("\n");*/
 
       if (cypher == NULL) {
 
@@ -271,9 +261,8 @@ int Dvd::FindKeys(unsigned int blocks = 20, bool verbose = false) {
 	      // replace this cypher with the first since they match
 	      delete cypher;
 	      cypher = cyphers[0];
-              printf("reusing seed %04x on block %02d\n", cypher->seed, block);
 	    } else {
-              printf("%02d Found %04x\n", block, cypher->seed);
+              printf(" * Block %02d found key 0x%04x\n", block, cypher->seed);
 	    }
 	    // decode the raw_sector now that we have the correct cypher
             cypher->Decode(raw_sector, 12);
@@ -309,6 +298,8 @@ int Dvd::FindKeys(unsigned int blocks = 20, bool verbose = false) {
     }
 
   } // END for (block)
+
+  printf("\nDone.\n\n");
 
   return 0;
 

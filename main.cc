@@ -57,7 +57,7 @@ int main(void) {
   //return 0;
   //unsigned char *dummy = NULL;
   //dvd.ReadRawSectorCache(0, dummy, true);
-  dvd.FindKeys(50, false);
+  dvd.FindKeys(20, false);
 
   /*
   // prepare to read
