@@ -31,6 +31,8 @@ class Cypher {
   Cypher(unsigned int seed, unsigned int length);
   ~Cypher() { free(bytes); };
 
+  void Decode(unsigned char *data, unsigned int start);
+
   unsigned int seed;
   unsigned int length;
   unsigned char *bytes;
@@ -82,5 +84,17 @@ Cypher::Cypher(unsigned int seed, unsigned int length) : seed(seed), length(leng
   } // END for (i)
 
 }; // END Cypher::Cypher()
+
+void Cypher::Decode(unsigned char *data, unsigned int start) {
+  /* Uses the cypher bytes to decode data bytes beginning from start.
+   *
+   * Args:
+   *     data (unsigned char *): pointer to data bytes for decoding
+   *     start (unsigned int): starting point for the decode
+   */
+  for (unsigned int i = 0; i < length; i++)
+    data[i + start] = data[i + start] ^ bytes[i];
+
+}; // END Cypher::Decode()
 
 #endif // DVDCC_CYPHER_H_
