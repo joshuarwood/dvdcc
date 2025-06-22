@@ -32,9 +32,12 @@ unsigned char MMC_READ_12    = 0xA8;
 
 unsigned int HITACHI_MEM_BASE = 0x80000000;
 
+unsigned int BLOCKS_PER_CACHE = 5;
+
 unsigned int SECTOR_SIZE = 2048;
 unsigned int SECTORS_PER_BLOCK = 16;
-unsigned int SECTORS_PER_CACHE = 5 * SECTORS_PER_BLOCK;
+unsigned int SECTORS_PER_CACHE = BLOCKS_PER_CACHE * SECTORS_PER_BLOCK;
+
 unsigned int RAW_SECTOR_SIZE = 2064;
 
 std::unordered_map<std::string, unsigned int> disc_sector_no = {
