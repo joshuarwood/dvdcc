@@ -61,7 +61,7 @@ class Dvd {
 }; // END class Dvd()
 
 Dvd::Dvd(const char *path, int timeout = 1, bool verbose = false)
-    : timeout(timeout), cypher_number(0), first_raw_sector_id(0), cyphers{} {
+    : timeout(timeout), cypher_number(0), first_raw_sector_id(0), cyphers{NULL, NULL} {
   /* Constructor that opens a connection to the DVD drive.
    *
    * Args:
@@ -120,7 +120,7 @@ int Dvd::ReadRawSectorCache(int sector, unsigned char *buffer, bool verbose = fa
   /* Read all raw sectors from the 80 sector cache.
    *
    * Args:
-   *     sector (int): starting sector
+   *     sector (int): starting sector relative to the first disc sector
    *     buffer (unsigned char *): pointer to the buffer where bytes
    *                               returned by the command are placed
    *     verbose (bool): when true print command details (default: false)
@@ -199,25 +199,30 @@ unsigned int Dvd::CypherIndex(unsigned int raw_sector_id) {
 }; // END Dvd::CypherIndex()
 
 int Dvd::FindKeys(unsigned int blocks = 20, bool verbose = false) {
+  /* Find the cypher keys needed to decode raw sector data.
+   *
+   * Args:
+   *     block (int): number of blocks to check starting from the first sector (default: 20)
+   *     verbose (bool): when true print command details (default: false)
+   *
+   * Returns:
+   *     (int): command status (0 = success, -1 = fail)
+   */
+  Cypher *cypher = NULL;
 
-  bool found_all_cyphers = false;
-
-  Cypher *cypher;
-
+  unsigned int rel_sector_id, raw_sector_id, raw_edc, tmp_edc;
   const unsigned int buflen = constants::RAW_SECTOR_SIZE * constants::SECTORS_PER_CACHE;
   unsigned char buffer[buflen];
   unsigned char *raw_sector, tmp[constants::RAW_SECTOR_SIZE];
 
-  unsigned int rel_sector_id, raw_sector_id, raw_edc, tmp_edc;
+  bool found_all_cyphers = false; // set to true once we find all cyphers
 
   printf("\nFinding DVD keys.\n\n");
-  Progress progress;
-  progress.Start();
 
-  // loop through blocks of sectors to find cyphers for each block
+  // loop through blocks of sectors to find the cypher for each block
   for (unsigned int block = 0; block < blocks; block++) {
 
-    // starting sector id for the block relative to first disc sector
+    // starting sector id for this block relative to first disc sector
     rel_sector_id = block * constants::SECTORS_PER_BLOCK;
 
     // fill the buffer from cache whenever we're outside last cache read
@@ -229,9 +234,9 @@ int Dvd::FindKeys(unsigned int blocks = 20, bool verbose = false) {
 
     // assign cypher if all cyphers are found, otherwise set to NULL to find a new cypher
     cypher = found_all_cyphers ? cyphers[block % cypher_number + 1] : NULL;
-    if (cypher) {
-      printf("reusing cypher %04x\n", cypher->seed);
-    }
+    if (cypher)
+      printf("reusing seed %04x\n", cypher->seed);
+
     // add ReadRawCache here when we hit multiples of the cache size block % BLOCKS_PER_CACHE
     for (unsigned int sector = 0; sector < constants::SECTORS_PER_BLOCK; sector++) {
 
@@ -247,13 +252,11 @@ int Dvd::FindKeys(unsigned int blocks = 20, bool verbose = false) {
       // gather error detection code for the raw sector
       raw_edc = RawSectorEdc(raw_sector);
 
-      /*
-      // Note: cypher_id should be a member of the Dvd class
       printf("%d %d cypher id %02d\n", RawSectorId(raw_sector), sector, block);
       for (int i=0; i<10; i++)
         printf(" %02x", raw_sector[i]);
       printf("\n");
-      //cypher_id = (sector_id - start_sector_id) / 16;*/
+
       if (cypher == NULL) {
 
         // loop through seeds to find the correct cypher
@@ -285,7 +288,6 @@ int Dvd::FindKeys(unsigned int blocks = 20, bool verbose = false) {
         // verify that we successfully found the cypher
         if (cypher == NULL) {
           printf("dvdcc:devices:Dvd::FindKeys() Could not identify cypher %02d\n", cypher_number);
-	  progress.Finish();
 	  return -1;
         } // END if (cypher == NULL)
 
@@ -295,7 +297,6 @@ int Dvd::FindKeys(unsigned int blocks = 20, bool verbose = false) {
         cypher->Decode(raw_sector, 12);
         if (raw_edc != ecma_267::calculate(raw_sector, constants::RAW_SECTOR_SIZE - 4)) {
           printf("dvdcc:devices:Dvd::FindKeys() Failed to decode sector with seed %04x\n", cypher->seed);
-	  progress.Finish();
 	  return -1;
         } // END if (raw_edc != ...)
 
@@ -309,8 +310,6 @@ int Dvd::FindKeys(unsigned int blocks = 20, bool verbose = false) {
       cyphers[cypher_number++] = new Cypher(cypher->seed, cypher->length);
       delete cypher;
     }
-
-    //progress.Update(block, 20);
 
   } // END for (block)
 

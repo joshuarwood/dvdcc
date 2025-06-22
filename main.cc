@@ -53,7 +53,9 @@ int main(void) {
   printf("Drive model: %s\n", dvd.model);
 
   dvd.Start();
-  dvd.FindKeys();
+  unsigned char *dummy = NULL;
+  dvd.ReadRawSectorCache(1000, dummy, false);
+  dvd.FindKeys(20, false);
 
   /*
   // prepare to read
