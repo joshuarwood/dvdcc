@@ -28,12 +28,12 @@
 class Cypher {
 
  public:
-   Cypher(unsigned int seed, unsigned int length);
-   ~Cypher() { free(bytes); };
+  Cypher(unsigned int seed, unsigned int length);
+  ~Cypher() { free(bytes); };
 
-   unsigned int seed;
-   unsigned int length;
-   unsigned char *bytes;
+  unsigned int seed;
+  unsigned int length;
+  unsigned char *bytes;
 
 }; // END class Cypher()
 

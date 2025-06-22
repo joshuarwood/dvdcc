@@ -31,13 +31,12 @@
 #include <sys/ioctl.h>
 #include <fcntl.h>
 
-u_int8_t SPC_INQUIRY = 0x12;
-u_int8_t MMC_READ_12 = 0xA8;
+#include "constants.h"
 
-u_int32_t HITACHI_MEM_BASE = 0x80000000;
+namespace commands {
 
-int ExecuteCommand(int fd, unsigned char *cmd, unsigned char *buffer,
-                    int buflen, int timeout, bool verbose) {
+int Execute(int fd, unsigned char *cmd, unsigned char *buffer,
+	    int buflen, int timeout, bool verbose) {
   /* Sends a command to the DVD drive using Linux API
    *
    * Args:
@@ -66,7 +65,7 @@ int ExecuteCommand(int fd, unsigned char *cmd, unsigned char *buffer,
   cgc.timeout = timeout * 1000;
 
   if (verbose) {
-    printf("dvdcc:commands:ExecuteCommand() Executing MMC command");
+    printf("dvdcc:commands:Execute() Executing MMC command");
     for (int i=0; i<6; i++) printf(" %02x%02x", cgc.cmd[2*i], cgc.cmd[2*i+1]);
       printf("\n");
   }
@@ -74,14 +73,14 @@ int ExecuteCommand(int fd, unsigned char *cmd, unsigned char *buffer,
   int status = ioctl(fd, CDROM_SEND_PACKET, &cgc);
 
   if (verbose)
-    printf("dvdcc:commands:ExecuteCommand() Sense data %02X/%02X/%02X (status %d)\n",
+    printf("dvdcc:commands:Execute() Sense data %02X/%02X/%02X (status %d)\n",
            cgc.sense->sense_key, cgc.sense->asc, cgc.sense->ascq, status);
 
   return status;
 
-}; // END ExecuteCommand()
+}; // END commands::Execute()
 
-int DriveReadSectors(int fd, unsigned char *buffer, int sector, int sectors, bool streaming, int timeout, bool verbose) {
+int ReadSectors(int fd, unsigned char *buffer, int sector, int sectors, bool streaming, int timeout, bool verbose) {
   /* Read 2048 byte data sectors from the drive. These do not include the first
    * 12 bytes (ID, IED, CPR_MAI) or last 4 bytes (EDC) found in raw sectors.
    *
@@ -102,7 +101,7 @@ int DriveReadSectors(int fd, unsigned char *buffer, int sector, int sectors, boo
 
   memset(cmd, 0, 12);
 
-  cmd[ 0] = MMC_READ_12;                                    // read command
+  cmd[ 0] = constants::MMC_READ_12;                         // read command
   cmd[ 1] = streaming ? 0 : 0x08;                           // force unit access bit
   cmd[ 2] = (unsigned char)(( sector & 0xFF000000) >> 24);  // sector MSB
   cmd[ 3] = (unsigned char)(( sector & 0x00FF0000) >> 16);  // sector continued
@@ -114,11 +113,11 @@ int DriveReadSectors(int fd, unsigned char *buffer, int sector, int sectors, boo
   cmd[ 9] = (unsigned char) (sectors & 0x000000FF);         // sectors LSB
   cmd[10] = streaming ? 0x80 : 0;                           // streaming bit
 
-  return ExecuteCommand(fd, cmd, buffer, sectors * 2048, timeout, verbose);
+  return Execute(fd, cmd, buffer, sectors * 2048, timeout, verbose);
 
-}; // END DriveReadSectors()
+}; // END commands::ReadSectors()
 
-int DriveReadRawBytes(int fd, unsigned char *buffer, int offset, int nbyte, int timeout, bool verbose) {
+int ReadRawBytes(int fd, unsigned char *buffer, int offset, int nbyte, int timeout, bool verbose) {
   /* Reads raw bytes from the drive cache. This cache consists of 2064 byte
    * raw sectors with ID, IED, CPR_MAI, USER DATA, and EDC fields.
    *
@@ -138,7 +137,7 @@ int DriveReadRawBytes(int fd, unsigned char *buffer, int offset, int nbyte, int 
    * Returns:
    *     (int): command status (-1 means fail)
    */
-  u_int32_t address = HITACHI_MEM_BASE + offset;
+  u_int32_t address = constants::HITACHI_MEM_BASE + offset;
   unsigned char cmd[12];
 
   if ((nbyte <= 0) || (nbyte > 65535)) {
@@ -160,11 +159,11 @@ int DriveReadRawBytes(int fd, unsigned char *buffer, int offset, int nbyte, int 
   cmd[10] = (unsigned char)((  nbyte & 0xFF00) >> 8);      // nbyte MSB
   cmd[11] = (unsigned char) (  nbyte & 0x00FF);            // nbyte LSB
 
-  return ExecuteCommand(fd, cmd, buffer, nbyte, timeout, verbose);
+  return Execute(fd, cmd, buffer, nbyte, timeout, verbose);
 
-}; // END DriveReadRawBytes()
+}; // END commands::ReadRawBytes()
 
-int DriveClearCache(int fd, int sector, int timeout, bool verbose) {
+int ClearCache(int fd, int sector, int timeout, bool verbose) {
   /* Clears the drive cache by forcing a sector read with zero length.
    *
    * Args:
@@ -180,18 +179,18 @@ int DriveClearCache(int fd, int sector, int timeout, bool verbose) {
 
   memset(cmd, 0, 12);
 
-  cmd[0] = MMC_READ_12;                                  // read command
+  cmd[0] = constants::MMC_READ_12;                       // read command
   cmd[1] = 0x08;                                         // force unit access bit
   cmd[2] = (unsigned char)((sector & 0xFF000000) >> 24); // sector MSB
   cmd[3] = (unsigned char)((sector & 0x00FF0000) >> 16); // sector continued
   cmd[4] = (unsigned char)((sector & 0x0000FF00) >> 8);  // sector continued
   cmd[5] = (unsigned char) (sector & 0x000000FF);        // sector LSB
 
-  return ExecuteCommand(fd, cmd, NULL, 0, timeout, verbose);
+  return Execute(fd, cmd, NULL, 0, timeout, verbose);
 
-}; // END DriveClearCache()
+}; // END commands::ClearCache()
 
-int DriveInfo(int fd, char *model_str, int timeout, bool verbose) {
+int Info(int fd, char *model_str, int timeout, bool verbose) {
   /* Retrieves the drive model string as vendor/prod_id/prod_rev.
    *
    * Args:
@@ -209,10 +208,10 @@ int DriveInfo(int fd, char *model_str, int timeout, bool verbose) {
   memset(cmd, 0, 12);
   memset(buffer, 0, buflen);
 
-  cmd[0] = SPC_INQUIRY;
+  cmd[0] = constants::SPC_INQUIRY;
   cmd[4] = buflen;
 
-  int status = ExecuteCommand(fd, cmd, buffer, buflen, timeout, verbose);
+  int status = Execute(fd, cmd, buffer, buflen, timeout, verbose);
 
   char *vendor = strndup((char *)&buffer[8], 8);
   char *prod_id = strndup((char *)&buffer[16], 16);
@@ -222,10 +221,10 @@ int DriveInfo(int fd, char *model_str, int timeout, bool verbose) {
 
   return status;
 
-}; // END DriveInfo()
+}; // END commands::Info()
 
-int DriveState(int fd, bool state, int timeout, bool verbose) {
-  /* Toggles the drive state where true = spinning, false = stopped.
+int Spin(int fd, bool state, int timeout, bool verbose) {
+  /* Toggles the disc spin state where true = spinning, false = stopped.
    *
    * Args:
    *     fd (int): the file descriptor of the drive
@@ -243,11 +242,13 @@ int DriveState(int fd, bool state, int timeout, bool verbose) {
   memset(cmd, 0, 12);
   memset(buffer, 0, buflen);
 
-  cmd[0] = 0x1B;
+  cmd[0] = constants::SBC_START_STOP;
   cmd[4] = (unsigned char)state;
 
-  return ExecuteCommand(fd, cmd, buffer, buflen, timeout, verbose);
+  return Execute(fd, cmd, buffer, buflen, timeout, verbose);
 
-}; // END DriveState()
+}; // END commands::Spin()
+
+} // namespace commands
 
 #endif // DVDCC_COMMANDS_H_

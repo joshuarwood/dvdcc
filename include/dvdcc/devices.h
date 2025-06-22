@@ -23,31 +23,24 @@
 
 #include <unistd.h>
 #include <fcntl.h>
-#include <dvdcc/commands.h>
 
-unsigned int SECTOR_SIZE = 2048;
-unsigned int RAW_SECTOR_SIZE = 2064;
-unsigned int SECTORS_PER_BLOCK = 16;
-unsigned int SECTORS_PER_CACHE = 5 * SECTORS_PER_BLOCK;
-
-unsigned int GAMECUBE_SECTORS_NO = 712880;
-unsigned int WII_SECTORS_NO_SL = 2294912;
-unsigned int WII_SECTORS_NO_DL = 4155840;
+#include "dvdcc/commands.h"
+#include "dvdcc/constants.h"
 
 /* Dvd class for interfacing with a DVD drive. */
 class Dvd {
 
  public:
-   Dvd(const char *path, int timeout, bool verbose);
-   ~Dvd() { close(fd); };
+  Dvd(const char *path, int timeout, bool verbose);
+  ~Dvd() { close(fd); };
 
-   int Start(bool verbose);                                                 // start spinning the disc
-   int Stop(bool verbose);                                                  // stop spinning the disc
-   int ReadRawSectorCache(int sector, unsigned char *buffer, bool verbose); // read 5 blocks of raw sectors
+  int Start(bool verbose);                                                 // start spinning the disc
+  int Stop(bool verbose);                                                  // stop spinning the disc
+  int ReadRawSectorCache(int sector, unsigned char *buffer, bool verbose); // read 5 blocks of raw sectors
 
-   int fd;         // file descriptor
-   int timeout;    // command timeout in seconds
-   char model[36]; // drive model string with vendor/prod_id/prod_rev
+  int fd;         // file descriptor
+  int timeout;    // command timeout in seconds
+  char model[36]; // drive model string with vendor/prod_id/prod_rev
 
 }; // END class Dvd()
 
@@ -65,7 +58,7 @@ Dvd::Dvd(const char *path, int timeout = 1, bool verbose = false) : timeout(time
   fd = open(path, O_RDONLY | O_NONBLOCK);
 
   // read and store the model string
-  int status = DriveInfo(fd, model, timeout, verbose);
+  int status = commands::Info(fd, model, timeout, verbose);
   if (status != 0) {
     printf("dvdcc:devices:Dvd() Could not determine drive model for %s\n", path);
     printf("dvdcc:devices:Dvd() Exiting...\n");
@@ -86,7 +79,7 @@ int Dvd::Start(bool verbose = false) {
   if (verbose)
     printf("dvdcc:devices:Dvd:Start() Starting the drive.\n");
 
-  return DriveState(fd, true, timeout, verbose);
+  return commands::Spin(fd, true, timeout, verbose);
 
 }; // END Dvd::Start()
 
@@ -102,7 +95,7 @@ int Dvd::Stop(bool verbose = false) {
   if (verbose)
     printf("dvdcc:devices:Dvd:Stop() Stopping the drive.\n");
 
-  return DriveState(fd, true, timeout, verbose);
+  return commands::Spin(fd, true, timeout, verbose);
 
 }; // END Dvd::Stop()
 
@@ -119,14 +112,14 @@ int Dvd::ReadRawSectorCache(int sector, unsigned char *buffer, bool verbose = fa
    *     (int): command status (-1 means fail)
    */
   int status;
-  const int buflen = RAW_SECTOR_SIZE * SECTORS_PER_CACHE;
+  const int buflen = constants::RAW_SECTOR_SIZE * constants::SECTORS_PER_CACHE;
 
   if (verbose)
     printf("dvdcc:devices:Dvd:ReadRawSectorCache() Reading from sector %d.\n", sector);
 
   // perform a streaming read to fill the cache with 5 blocks / 80 sectors
   // starting from sector. Note: reading first sector to fills the full cache.
-  if (DriveReadSectors(fd, buffer, sector, 1, true, timeout, verbose) != 0)
+  if (commands::ReadSectors(fd, buffer, sector, 1, true, timeout, verbose) != 0)
     return -1;
 
   // clear the buffer contents
@@ -135,7 +128,7 @@ int Dvd::ReadRawSectorCache(int sector, unsigned char *buffer, bool verbose = fa
   // read the cache in steps to work around the 65535 byte cache read limit
   for (int i = 0; i < buflen; i += 65535) {
     int len = i + 65535 <= buflen ? 65535 : buflen - i;
-    if (DriveReadRawBytes(fd, buffer + i, i, len, timeout, verbose) != 0)
+    if (commands::ReadRawBytes(fd, buffer + i, i, len, timeout, verbose) != 0)
       return -1;
   }
 

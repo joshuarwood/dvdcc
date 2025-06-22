@@ -21,15 +21,19 @@
  */
 
 #include <time.h>
+#include "dvdcc/constants.h"
 #include "dvdcc/cypher.h"
 #include "dvdcc/progress.h"
 #include "dvdcc/devices.h"
 #include "dvdcc/ecma_267.h"
 #include "dvdcc/commands.h"
+#include <iostream>
 
 int main(void) {
 
   /*
+  std::cout << constants::publishers["69"] << std::endl;
+  return 0;
   int N = 100;
 
   Progress progress;
@@ -44,13 +48,14 @@ int main(void) {
   return 0;
   */
 
+  /*
   // open drive
   Dvd dvd("/dev/sr0");
   printf("Drive model: %s\n", dvd.model);
 
   // prepare to read
   FILE *f = fopen("test.bin", "wb");
-  unsigned char buffer[RAW_SECTOR_SIZE * SECTORS_PER_CACHE];
+  unsigned char buffer[constants::RAW_SECTOR_SIZE * constants::SECTORS_PER_CACHE];
 
   // start the progress bar
   Progress progress;
@@ -58,16 +63,16 @@ int main(void) {
 
   // read sectors and write to file
   dvd.Start(true);
-  for (int sector = 0; sector < GAMECUBE_SECTORS_NO; sector += SECTORS_PER_CACHE) {
+  for (int sector = 0; sector < constants::disc_sector_no["GAMECUBE"]; sector += constants::SECTORS_PER_CACHE) {
     dvd.ReadRawSectorCache(sector, buffer, false);
     fwrite(buffer, 1, sizeof(buffer), f);
     if (sector % 100 == 0)
-        progress.Update(sector, GAMECUBE_SECTORS_NO);
+        progress.Update(sector, constants::disc_sector_no["GAMECUBE"]);
   }
   progress.Finish();
   fclose(f);
-
-  return 0;
+  */
+  //return 0;
 
     Cypher cypher(0x180, 2048);
     printf(" cypher[:10] = ");
@@ -76,7 +81,7 @@ int main(void) {
     printf("\n");
 
     unsigned char cmd[3] = {1, 2, 3};
-    unsigned int edc = calc_edc(cmd, 3);
+    unsigned int edc = ecma267::calculate(cmd, 3);
     printf("\nedc is 0x%x\n", edc);
 
     return 0;
@@ -85,7 +90,7 @@ int main(void) {
     int fd = open("/dev/sr0", O_RDONLY | O_NONBLOCK);
 
     //DriveInfo(fd, 1, true);
-    DriveState(fd, false, 1, true);
+    commands::Spin(fd, false, 1, true);
 
     close(fd);
 

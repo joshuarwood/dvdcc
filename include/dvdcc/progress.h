@@ -28,34 +28,34 @@
 class Progress {
 
  public:
-   void Start(void);
-   void Update(int n, int total);
-   void Finish(void);
-   void DeltaString(char *buffer, double dt_sec);
+  void Start(void);
+  void Update(int n, int total);
+  void Finish(void);
+  void DeltaString(char *buffer, double dt_sec);
    
-   float dt;
-   float frac;
-   time_t t0;
+  float dt;
+  float frac;
+  time_t t0;
 
-   char bar[32];
-   char elapsed[32];
-   char remaining[32];
+  char bar[32];
+  char elapsed[32];
+  char remaining[32];
 
-};
+}; // END class Progress()
 
 void Progress::Start(void) {
   /* Start the progress bar activity */
   t0 = time(NULL);
   sprintf(bar, "--------------------");
 
-}; // END Start()
+}; // END Progress::Start()
 
 void Progress::Finish(void) {
   /* Finish the progress bar activity */
   printf("\n");
   fflush(stdout);
 
-}; // END Finish()
+}; // END Progress::Finish()
 
 void Progress::Update(int n, int total) {
   /* Update the progress bar
@@ -77,7 +77,7 @@ void Progress::Update(int n, int total) {
          bar, 100 * frac, elapsed, remaining);
   fflush(stdout);
 
-}; // END Update()
+}; // END Progress::Update()
 
 void Progress::DeltaString(char *buffer, double dt_sec) {
   /* Form hour:minute:second string from a time delta in seconds.
@@ -92,6 +92,6 @@ void Progress::DeltaString(char *buffer, double dt_sec) {
 
   sprintf(buffer, "%02d:%02d:%02d", hr, min, sec);
 
-}; // END DeltaString()
+}; // END Progress::DeltaString()
 
 #endif // DVDCC_PROGRESS_H_
