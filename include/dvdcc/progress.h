@@ -73,7 +73,7 @@ void Progress::Update(int n, int total) {
   DeltaString(elapsed, dt);
   DeltaString(remaining, dt * (1/frac - 1));
 
-  printf("\r\x1b[KProgress %s %5.1f%% | elapsed %s remaiing %s ",
+  printf("\r\x1b[KProgress %s %5.1f%% | elapsed %s remaining %s ",
          bar, 100 * frac, elapsed, remaining);
   fflush(stdout);
 
@@ -90,7 +90,10 @@ void Progress::DeltaString(char *buffer, double dt_sec) {
   int min = (dt_sec - 3600 * hr) / 60;
   int sec = dt_sec - 3600 * hr - 60 * min;
 
-  sprintf(buffer, "%02d:%02d:%02d", hr, min, sec);
+  if (hr <= 99)
+    sprintf(buffer, "%02d:%02d:%02d", hr, min, sec);
+  else
+    sprintf(buffer, "XX:XX:XX");
 
 }; // END Progress::DeltaString()
 
