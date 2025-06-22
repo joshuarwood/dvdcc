@@ -52,10 +52,12 @@ int main(void) {
   Dvd dvd("/dev/sr0");
   printf("Drive model: %s\n", dvd.model);
 
-  dvd.Start();
-  unsigned char *dummy = NULL;
-  dvd.ReadRawSectorCache(1000, dummy, false);
-  dvd.FindKeys(20, false);
+  //dvd.Stop(true);
+  dvd.Start(true);
+  //return 0;
+  //unsigned char *dummy = NULL;
+  //dvd.ReadRawSectorCache(0, dummy, true);
+  dvd.FindKeys(50, false);
 
   /*
   // prepare to read

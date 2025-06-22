@@ -61,7 +61,7 @@ class Dvd {
 }; // END class Dvd()
 
 Dvd::Dvd(const char *path, int timeout = 1, bool verbose = false)
-    : timeout(timeout), cypher_number(0), first_raw_sector_id(0), cyphers{NULL, NULL} {
+    : timeout(timeout), cypher_number(0), first_raw_sector_id(0), cyphers{} {
   /* Constructor that opens a connection to the DVD drive.
    *
    * Args:
@@ -112,7 +112,7 @@ int Dvd::Stop(bool verbose = false) {
   if (verbose)
     printf("dvdcc:devices:Dvd:Stop() Stopping the drive.\n");
 
-  return commands::Spin(fd, true, timeout, verbose, NULL);
+  return commands::Spin(fd, false, timeout, verbose, NULL);
 
 }; // END Dvd::Stop()
 
@@ -208,9 +208,9 @@ int Dvd::FindKeys(unsigned int blocks = 20, bool verbose = false) {
    * Returns:
    *     (int): command status (0 = success, -1 = fail)
    */
-  Cypher *cypher = NULL;
+  Cypher *cypher;
 
-  unsigned int rel_sector_id, raw_sector_id, raw_edc, tmp_edc;
+  unsigned int raw_sector_id, raw_edc, tmp_edc;
   const unsigned int buflen = constants::RAW_SECTOR_SIZE * constants::SECTORS_PER_CACHE;
   unsigned char buffer[buflen];
   unsigned char *raw_sector, tmp[constants::RAW_SECTOR_SIZE];
@@ -219,43 +219,40 @@ int Dvd::FindKeys(unsigned int blocks = 20, bool verbose = false) {
 
   printf("\nFinding DVD keys.\n\n");
 
-  // loop through blocks of sectors to find the cypher for each block
-  for (unsigned int block = 0; block < blocks; block++) {
+  // read the first cache containing block 0
+  // to get the first raw sector id
+  ReadRawSectorCache(0, buffer, verbose);
+  first_raw_sector_id = RawSectorId(buffer);
 
-    // starting sector id for this block relative to first disc sector
-    rel_sector_id = block * constants::SECTORS_PER_BLOCK;
+  // loop through blocks of sectors to find the cypher for each block.
+  // start from block 1 because block 0 is the special block with dvd info
+  for (unsigned int block = 1; block < blocks; block++) {
 
     // fill the buffer from cache whenever we're outside last cache read
+    // and reset raw_sector to the beginning of the new buffer
     if (block % constants::BLOCKS_PER_CACHE == 0) {
-      printf("Reading cache at sector %d\n", rel_sector_id);
-      ReadRawSectorCache(rel_sector_id, buffer, verbose);
-      raw_sector = NULL;
+      printf("reading new cache at %d\n", block);
+      ReadRawSectorCache(block * constants::SECTORS_PER_BLOCK, buffer, verbose);
     }
 
     // assign cypher if all cyphers are found, otherwise set to NULL to find a new cypher
-    cypher = found_all_cyphers ? cyphers[block % cypher_number + 1] : NULL;
+    cypher = found_all_cyphers ? cyphers[(block - 1) % cypher_number] : NULL;
     if (cypher)
-      printf("reusing seed %04x\n", cypher->seed);
+      printf("reusing seed %04x on block %02d\n", cypher->seed, block);
 
-    // add ReadRawCache here when we hit multiples of the cache size block % BLOCKS_PER_CACHE
-    for (unsigned int sector = 0; sector < constants::SECTORS_PER_BLOCK; sector++) {
+    for (unsigned int sub_sector = 0; sub_sector < constants::SECTORS_PER_BLOCK; sub_sector++) {
 
-      if (raw_sector) // increment to next sector when prior sector exists
-        raw_sector = raw_sector + constants::RAW_SECTOR_SIZE;
-      else // otherwise begin at buffer start
-        raw_sector = buffer;
-
-      // store the first raw sector id
-      if (block == 0 && sector == 0)
-        first_raw_sector_id = RawSectorId(raw_sector);
+      // get the raw sector for this sub sector of the block
+      raw_sector = buffer + (sub_sector + block % constants::BLOCKS_PER_CACHE * constants::SECTORS_PER_BLOCK) * constants::RAW_SECTOR_SIZE;
 
       // gather error detection code for the raw sector
       raw_edc = RawSectorEdc(raw_sector);
 
-      printf("%d %d cypher id %02d\n", RawSectorId(raw_sector), sector, block);
+      /*
+      printf("%d %d cypher id %02d\n", RawSectorId(raw_sector), sub_sector, block);
       for (int i=0; i<10; i++)
         printf(" %02x", raw_sector[i]);
-      printf("\n");
+      printf("\n");*/
 
       if (cypher == NULL) {
 
@@ -268,13 +265,13 @@ int Dvd::FindKeys(unsigned int blocks = 20, bool verbose = false) {
 	  cypher->Decode(tmp, 12);
 	  // verify edc
 	  if (raw_edc == ecma_267::calculate(tmp, constants::RAW_SECTOR_SIZE - 4)) {
-            if (cyphers[1] && cyphers[1]->seed == cypher->seed) {
+            if (cyphers[0] && cyphers[0]->seed == cypher->seed) {
               // repeated seed means we found all cyphers
 	      found_all_cyphers = true;
 	      // replace this cypher with the first since they match
 	      delete cypher;
-	      cypher = cyphers[1];
-              printf("reusing cypher %04x\n", cypher->seed);
+	      cypher = cyphers[0];
+              printf("reusing seed %04x on block %02d\n", cypher->seed, block);
 	    } else {
               printf("%02d Found %04x\n", block, cypher->seed);
 	    }
@@ -302,7 +299,7 @@ int Dvd::FindKeys(unsigned int blocks = 20, bool verbose = false) {
 
       } // END if/else (cypher == NULL)
 
-    } // END for (sector)
+    } // END for (sub_sector)
 
     if (found_all_cyphers == false) {
       // copy the cypher into the cyphers array
