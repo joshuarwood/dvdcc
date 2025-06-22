@@ -22,7 +22,7 @@
 #ifndef DVDCC_ECMA267_H_
 #define DVDCC_ECMA267_H_
 
-namespace ecma267 {
+namespace ecma_267 {
 
 // table of pre-computed 32 bit CRC results of all possible bytes 0-255 using polynomial 0x80000011
 unsigned int table[256] = {
@@ -81,8 +81,8 @@ unsigned int calculate(unsigned char *bytes, int size) {
 
   return crc;
 
-}; // END ecma267::calculate()
+}; // END ecma_267::calculate()
 
-} // namespace ecma267
+} // namespace ecma_267
 
 #endif // DVDCC_ECMA267_H_

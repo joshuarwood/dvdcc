@@ -81,7 +81,7 @@ int main(void) {
     printf("\n");
 
     unsigned char cmd[3] = {1, 2, 3};
-    unsigned int edc = ecma267::calculate(cmd, 3);
+    unsigned int edc = ecma_267::calculate(cmd, 3);
     printf("\nedc is 0x%x\n", edc);
 
     return 0;
