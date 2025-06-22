@@ -52,6 +52,10 @@ int main(void) {
   Dvd dvd("/dev/sr0");
   printf("Drive model: %s\n", dvd.model);
 
+  dvd.Start();
+  dvd.FindKeys();
+
+  /*
   // prepare to read
   FILE *f = fopen("test.bin", "wb");
   unsigned char buffer[constants::RAW_SECTOR_SIZE * constants::SECTORS_PER_CACHE];
@@ -67,7 +71,7 @@ int main(void) {
     fwrite(buffer, 1, sizeof(buffer), f);
     if (sector % 100 == 0)
         progress.Update(sector, constants::disc_sector_no["GAMECUBE"]);
-    if (sector > 10000)
+    if (sector > 500)
 	 break;
   }
   progress.Finish();
@@ -92,6 +96,6 @@ int main(void) {
     commands::Spin(fd, false, 1, true, NULL);
 
     close(fd);
-
+    */
     return 0;
 };
