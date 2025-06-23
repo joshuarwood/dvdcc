@@ -56,11 +56,12 @@ int main(void) {
   dvd.Start();
   dvd.FindDiscType();
   printf("Disc is %s, sector_number %lu\n", dvd.disc_type.c_str(), dvd.sector_number);
-  return 0;
   //return 0;
   //unsigned char *dummy = NULL;
   //dvd.ReadRawSectorCache(0, dummy, true);
   dvd.FindKeys();
+  dvd.DisplayMetaData();
+  return 0;
 
   /*
   // prepare to read

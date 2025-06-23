@@ -21,6 +21,7 @@
 #ifndef DVDCC_DEVICES_H_
 #define DVDCC_DEVICES_H_
 
+#include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <linux/cdrom.h>
@@ -49,6 +50,7 @@ class Dvd {
   int ReadRawSectorCache(int sector, unsigned char *buffer, bool verbose); // read 5 blocks of raw sectors
   int FindKeys(unsigned int blocks, bool verbose);                         // find the keys for decoding sectors
   int FindDiscType(bool verbose);                                          // find the disc type (standard, gamecube, wii, etc)
+  int DisplayMetaData(bool verbose);                                       // display disc metadata from the first sector
 
   unsigned int RawSectorId(unsigned char *raw_sector);                     // return sector id number
   unsigned int RawSectorEdc(unsigned char *raw_sector);                    // return sector error detection code
@@ -343,5 +345,66 @@ int Dvd::FindDiscType(bool verbose = false) {
   return -1;
 
 }; // END Dvd::FindDiscType()
+
+int Dvd::DisplayMetaData(bool verbose = false) {
+  /* Display disc metadata on-screen
+   *
+   * Args:
+   *     verbose (bool): when true print command details (default: false)
+   *
+   * Returns:
+   *     (int): command status (0 = success, -1 = fail)
+   */
+  printf("Disc information:\n");
+  printf("--------------------\n");
+  printf("Disc type..........: %s\n", disc_type.c_str());
+  printf("Disc size..........: %lu\n", sector_number);
+
+  // additional fields for Gamecube and WII discs
+  if (disc_type == "GAMECUBE" || disc_type == "WII_SINGLE_LAYER" || disc_type == "WII_DUAL_LAYER") {
+
+    // read cache block with first sector
+    unsigned char buffer[constants::RAW_SECTOR_SIZE * constants::SECTORS_PER_CACHE];
+    int status = ReadRawSectorCache(0, buffer, verbose);
+
+    // decode the first sector
+    cyphers[0]->Decode64(buffer, 12);
+
+    unsigned char *data = buffer + 6;
+
+    char *system_id    = strndup((char *)&data[0], 1);
+    char *game_id      = strndup((char *)&data[1], 2);
+    char *region_id    = strndup((char *)&data[3], 1);
+    char *publisher_id = strndup((char *)&data[4], 2);
+
+    // title without additional whitespace
+    char *title        = strndup((char *)&data[0x20], 992);
+    for (int i = 991; i >= 0 && title[i] == ' '; i--)
+      title[i] = '\0';
+
+    // full publisher name
+    std::string publisher = "UNKNOWN";
+    if (auto search = constants::publishers.find(publisher_id); search != constants::publishers.end())
+      publisher = search->second;
+
+    // full region name
+    std::string region = "UNKNOWN";
+    if (auto search = constants::regions.find(region_id); search != constants::regions.end())
+      region = search->second;
+
+    printf("System ID..........: %s\n", system_id);
+    printf("Game ID............: %s\n", game_id);
+    printf("Region.............: %s (%s)\n", region_id, region.c_str());
+    printf("Publisher..........: %s (%s)\n", publisher_id, publisher.c_str());
+    printf("Version............: 1.%02u\n", data[7]);
+    printf("Game title.........: %s\n", title);
+
+    return status;
+
+  } // END if (disc_type)
+
+  return 0;
+
+}; // END Dvd::DisplayMetaData()
 
 #endif // DVDCC_DEVICES_H_
