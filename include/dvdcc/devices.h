@@ -281,7 +281,7 @@ int Dvd::FindKeys(unsigned int blocks = 20, bool verbose = false) {
 	  } // END if/else (raw_edc == ...)
         } // END for (seed)
 
-        // verify that we successfully found the cypher
+        // throw and error if we couldn't find the cypher
         if (cypher == NULL) {
           printf("dvdcc:devices:Dvd::FindKeys() Could not identify cypher %02d\n", cypher_number);
 	  return -1;
@@ -305,7 +305,7 @@ int Dvd::FindKeys(unsigned int blocks = 20, bool verbose = false) {
       // and delete before evaluating the next block
       cyphers[cypher_number++] = new Cypher(cypher->seed, cypher->length);
       delete cypher;
-    }
+    } // END if (found_all_cyphers == false)
 
   } // END for (block)
 
