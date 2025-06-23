@@ -23,6 +23,10 @@
 
 #include <unistd.h>
 #include <fcntl.h>
+#include <linux/cdrom.h>
+
+#include <string>
+#include <map>
 
 #include "dvdcc/cypher.h"
 #include "dvdcc/ecma_267.h"
@@ -36,8 +40,7 @@ class Dvd {
  public:
   Dvd(const char *path, int timeout, bool verbose);
   ~Dvd() {
-    for (int i = 0; i < cypher_number; i++)
-      delete cyphers[i];
+    for (int i = 0; i < cypher_number; i++) delete cyphers[i];
     close(fd);
   };
 
@@ -45,6 +48,7 @@ class Dvd {
   int Stop(bool verbose);                                                  // stop spinning the disc
   int ReadRawSectorCache(int sector, unsigned char *buffer, bool verbose); // read 5 blocks of raw sectors
   int FindKeys(unsigned int blocks, bool verbose);                         // find the keys for decoding sectors
+  int FindDiscType(bool verbose);                                          // find the disc type (standard, gamecube, wii, etc)
 
   unsigned int RawSectorId(unsigned char *raw_sector);                     // return sector id number
   unsigned int RawSectorEdc(unsigned char *raw_sector);                    // return sector error detection code
@@ -54,13 +58,15 @@ class Dvd {
   int timeout;                      // command timeout in seconds
   char model[36];                   // drive model string with vendor/prod_id/prod_rev
   unsigned int cypher_number;       // number of cypher keys
+  unsigned int sector_number;       // number of disc sectors
+  std::string disc_type;            // disc type
 
   Cypher *cyphers[20];              // cyphers for decoding raw sectors
 
 }; // END class Dvd()
 
 Dvd::Dvd(const char *path, int timeout = 1, bool verbose = false)
-    : timeout(timeout), cypher_number(0), cyphers{} {
+    : timeout(timeout), cypher_number(0), sector_number(0), disc_type("UNKOWN"), cyphers{} {
   /* Constructor that opens a connection to the DVD drive.
    *
    * Args:
@@ -305,5 +311,37 @@ int Dvd::FindKeys(unsigned int blocks = 20, bool verbose = false) {
   return 0;
 
 }; // END Dvd::FindKeys()
+
+int Dvd::FindDiscType(bool verbose = false) {
+  /* Find the disc type and sector number for a disc.
+   *
+   * Args:
+   *     verbose (bool): when true print command details (default: false)
+   *
+   * Returns:
+   *     (int): command status (0 = success, -1 = fail)
+   */
+  unsigned char buffer[constants::SECTOR_SIZE];
+  struct request_sense sense;
+
+  // loop through known sector numbers / disc types
+  std::map<unsigned int, std::string>::iterator it;
+  for (it = constants::sector_numbers.begin(); it != constants::sector_numbers.end(); it++) {
+
+    // parse this iteration
+    sector_number = it->first;
+    disc_type = it->second;
+
+    // test sense keys just beyond the sector number to verify type
+    memset(&sense, 0, sizeof(sense));
+    commands::ReadSectors(fd, buffer, sector_number + 100, 1, false, timeout, verbose, &sense);
+
+    if (sense.sense_key == 0x05 && sense.asc == 0x21) return 0;
+
+  } // END for (it)
+
+  return -1;
+
+}; // END Dvd::FindDiscType()
 
 #endif // DVDCC_DEVICES_H_
