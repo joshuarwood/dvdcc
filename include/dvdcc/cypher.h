@@ -32,10 +32,14 @@ class Cypher {
   ~Cypher() { free(bytes); };
 
   void Decode(unsigned char *data, unsigned int start);
+  void Decode32(unsigned char *data, unsigned int start);
+  void Decode64(unsigned char *data, unsigned int start);
 
-  unsigned int seed;
-  unsigned int length;
-  unsigned char *bytes;
+  unsigned int seed;     // seed value used to create the cypher
+  unsigned int length;   // cypher length in bytes
+  unsigned int length32; // length used for 32 bit decode speedup
+  unsigned int length64; // length used for 64 bit decode speedup
+  unsigned char *bytes;  // byte values of the generated cypher
 
 }; // END class Cypher()
 
@@ -57,6 +61,16 @@ Cypher::Cypher(unsigned int seed, unsigned int length) : seed(seed), length(leng
    * Returns:
    *     (unsigned char *)
    */
+  if (length % 4 != 0) {
+    printf("dvdcc:cypher:Cypher::Cypher() Length %d is not a muliple of 4 for Decode32().", length);
+    exit(0);
+  } else length32 = length / 4;
+
+  if (length % 8 != 0) {
+    printf("dvdcc:cypher:Cypher::Cypher() Length %d is not a muliple of 8 for Decode64().", length);
+    exit(0);
+  } else length64 = length / 8;
+
   // local variables for loop
   unsigned int n, bit;
 
@@ -96,5 +110,35 @@ void Cypher::Decode(unsigned char *data, unsigned int start) {
     data[i + start] = data[i + start] ^ bytes[i];
 
 }; // END Cypher::Decode()
+
+void Cypher::Decode32(unsigned char *data, unsigned int start) {
+  /* Uses the cypher bytes to decode data bytes beginning from start
+   * in steps of 32 bits.
+   *
+   * Args:
+   *     data (unsigned char *): pointer to data bytes for decoding
+   *     start (unsigned int): starting point for the decode
+   */
+  unsigned int *data32 = (unsigned int *)(data + start);
+  unsigned int *bytes32 = (unsigned int *)bytes;
+  for (unsigned int i = 0; i < length32; i++)
+    data32[i] = data32[i] ^ bytes32[i];
+
+}; // END Cypher::Decode32()
+
+void Cypher::Decode64(unsigned char *data, unsigned int start) {
+  /* Uses the cypher bytes to decode data bytes beginning from start
+   * in steps of 64 bits.
+   *
+   * Args:
+   *     data (unsigned char *): pointer to data bytes for decoding
+   *     start (unsigned int): starting point for the decode
+   */
+  unsigned long int *data64 = (unsigned long int *)(data + start);
+  unsigned long int *bytes64 = (unsigned long int *)bytes;
+  for (unsigned int i = 0; i < length64; i++)
+    data64[i] = data64[i] ^ bytes64[i];
+
+}; // END Cypher::Decode64()
 
 #endif // DVDCC_CYPHER_H_
