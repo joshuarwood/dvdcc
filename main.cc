@@ -31,34 +31,13 @@
 
 int main(void) {
 
-  /*
-  std::cout << constants::publishers["69"] << std::endl;
-  return 0;
-  int N = 100;
-
-  Progress progress;
-  progress.Start();
-
-  for (int i=0; i<N; i++) {
-
-    sleep(1);
-    progress.Update(i, N);
-  }
-  progress.Finish();
-  return 0;
-  */
-
   // open drive
   Dvd dvd("/dev/sr0");
-  printf("Drive model: %s\n", dvd.model);
+  printf("\nFound drive model: %s\n", dvd.model);
 
   //dvd.Stop(true);
   dvd.Start();
   dvd.FindDiscType();
-  printf("Disc is %s, sector_number %lu\n", dvd.disc_type.c_str(), dvd.sector_number);
-  //return 0;
-  //unsigned char *dummy = NULL;
-  //dvd.ReadRawSectorCache(0, dummy, true);
   dvd.FindKeys();
   dvd.DisplayMetaData();
   return 0;
@@ -84,26 +63,5 @@ int main(void) {
   }
   progress.Finish();
   fclose(f);
-
-    Cypher cypher(0x180, 2048);
-    printf(" cypher[:10] = ");
-    for (int i=0; i<10; i++)
-	    printf(" %02x", cypher.bytes[i]);
-    printf("\n");
-
-    unsigned char cmd[3] = {1, 2, 3};
-    unsigned int edc = ecma_267::calculate(cmd, 3);
-    printf("\nedc is 0x%x\n", edc);
-
-    return 0;
-
-
-    int fd = open("/dev/sr0", O_RDONLY | O_NONBLOCK);
-
-    //commands::Info(fd, 1, true, NULL);
-    commands::Spin(fd, false, 1, true, NULL);
-
-    close(fd);
-    */
-    return 0;
+*/
 };
