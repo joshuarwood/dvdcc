@@ -22,7 +22,7 @@
 #define DVDCC_CONSTANTS_H_
 
 #include <string>
-#include <unordered_map>
+#include <map>
 
 namespace constants {
 
@@ -40,15 +40,15 @@ unsigned int SECTORS_PER_CACHE = BLOCKS_PER_CACHE * SECTORS_PER_BLOCK;
 
 unsigned int RAW_SECTOR_SIZE = 2064;
 
-std::unordered_map<std::string, unsigned int> disc_sector_no = {
-  {"GAMECUBE", 712880}, {"WII_SINGLE_LAYER", 2294912}, {"WII_DUAL_LAYER", 4155840}};
+std::map<unsigned int, std::string> sector_numbers = {
+  {712880, "GAMECUBE"}, {2294912, "WII_SINGLE_LAYER"}, {4155840, "WII_DUAL_LAYER"}};
 
-std::unordered_map<std::string, std::string> regions = {
+std::map<std::string, std::string> regions = {
   {"P", "PAL"}, {"E", "NTSC"}, {"J", "JAP"}, {"U", "AUS" }, {"F", "FRA" },
   {"D", "GER"}, {"I", "ITA" }, {"S", "SPA"}, {"X", "PALX"}, {"Y", "PALY"}};
 
 /* The following list has been derived from http://wiitdb.com/Company/HomePage */
-std::unordered_map<std::string, std::string> publishers = {
+std::map<std::string, std::string> publishers = {
   {"01", "Nintendo"},                                      {"02", "Rocket Games / Ajinomoto"},
   {"03", "Imagineer-Zoom"},                                {"04", "Gray Matter"},
   {"05", "Zamuse"},                                        {"06", "Falcom"},
