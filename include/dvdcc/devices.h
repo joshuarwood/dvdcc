@@ -161,7 +161,7 @@ unsigned int Dvd::RawSectorId(unsigned char *raw_sector) {
    * Returns:
    *     (unsigned int): sector id number
    */
-   return (raw_sector[0] << 24) + (raw_sector[1] << 16) + (raw_sector[2] << 8) + raw_sector[3];
+  return (raw_sector[0] << 24) + (raw_sector[1] << 16) + (raw_sector[2] << 8) + raw_sector[3];
 
 }; // END Dvd::RawSectorId()
 
@@ -174,9 +174,9 @@ unsigned int Dvd::RawSectorEdc(unsigned char *raw_sector) {
    * Returns:
    *     (unsigned int): error detection code
    */
-   unsigned char *edc_bytes = raw_sector + constants::RAW_SECTOR_SIZE - 4;
+  unsigned char *edc_bytes = raw_sector + constants::RAW_SECTOR_SIZE - 4;
 
-   return (edc_bytes[0] << 24) + (edc_bytes[1] << 16) + (edc_bytes[2] << 8) + edc_bytes[3];
+  return (edc_bytes[0] << 24) + (edc_bytes[1] << 16) + (edc_bytes[2] << 8) + edc_bytes[3];
 
 }; // END Dvd::RawSectorEdc()
 
@@ -262,6 +262,8 @@ int Dvd::FindKeys(unsigned int blocks = 20, bool verbose = false) {
 	    else
               printf(" * Block %02d found key 0x%04x\n", block, cypher->seed);
 	    // decode the raw_sector now that we have the correct cypher
+	    // Note: this could be removed, but I left it here in case
+	    // we decide to consolidate key finding with a full disc read.
             cypher->Decode64(raw_sector, 12);
             break;
 	  } else {
