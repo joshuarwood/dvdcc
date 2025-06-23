@@ -48,20 +48,19 @@ class Dvd {
 
   unsigned int RawSectorId(unsigned char *raw_sector);                     // return sector id number
   unsigned int RawSectorEdc(unsigned char *raw_sector);                    // return sector error detection code
-  unsigned int CypherIndex(unsigned int sector);                           // return cypher index for a sector
+  unsigned int CypherIndex(unsigned int block);                            // return cypher index for a block
 
   int fd;                           // file descriptor
   int timeout;                      // command timeout in seconds
   char model[36];                   // drive model string with vendor/prod_id/prod_rev
   unsigned int cypher_number;       // number of cypher keys
-  unsigned int first_raw_sector_id; // first raw sector id number of the DVD
 
   Cypher *cyphers[20];              // cyphers for decoding raw sectors
 
 }; // END class Dvd()
 
 Dvd::Dvd(const char *path, int timeout = 1, bool verbose = false)
-    : timeout(timeout), cypher_number(0), first_raw_sector_id(0), cyphers{} {
+    : timeout(timeout), cypher_number(0), cyphers{} {
   /* Constructor that opens a connection to the DVD drive.
    *
    * Args:
@@ -181,20 +180,26 @@ unsigned int Dvd::RawSectorEdc(unsigned char *raw_sector) {
 
 }; // END Dvd::RawSectorEdc()
 
-unsigned int Dvd::CypherIndex(unsigned int raw_sector_id) {
-  /* Return the cypher array index for a raw sector id.
+unsigned int Dvd::CypherIndex(unsigned int block) {
+  /* Return the cypher array index for a sector block.
+   *
+   * Blocks >= 1 use a repeating sequence of cypher values
+   * from 1 to cypher_number. The first block beyond cypher_number
+   * loops back to 1 to restart the sequence.
+   *
+   * Block 0 uses a unique cypher to decode disc information.
+   * The cypher index for this block is handled as a separate
+   * return value because it is not part of the repeating sequence.
    *
    * Args:
-   *     raw_sector_id (unsigned int): raw sector id number
+   *     block (unsigned int): block number
    *
    * Returns:
    *     (unsigned int): cypher index
    */
-   unsigned int block_id = (raw_sector_id - first_raw_sector_id) / 16;
-
-   // Note: The cypher indices for regular sectors begin at index 1
-   // because index 0 is a unique cypher used to decode disc information.
-   return block_id % cypher_number + 1;
+  if (block)
+    return (block - 1) % (cypher_number - 1) + 1;
+  return 0;
 
 }; // END Dvd::CypherIndex()
 
@@ -202,7 +207,7 @@ int Dvd::FindKeys(unsigned int blocks = 20, bool verbose = false) {
   /* Find the cypher keys needed to decode raw sector data.
    *
    * Args:
-   *     block (int): number of blocks to check starting from the first sector (default: 20)
+   *     blocks (int): number of blocks to check starting from the first sector (default: 20)
    *     verbose (bool): when true print command details (default: false)
    *
    * Returns:
@@ -219,22 +224,15 @@ int Dvd::FindKeys(unsigned int blocks = 20, bool verbose = false) {
 
   printf("\nFinding DVD keys...\n\n");
 
-  // read the first cache containing block 0
-  // to get the first raw sector id
-  ReadRawSectorCache(0, buffer, verbose);
-  first_raw_sector_id = RawSectorId(buffer);
-
-  // loop through blocks of sectors to find the cypher for each block.
-  // start from block 1 because block 0 is the special block with dvd info
-  for (unsigned int block = 1; block < blocks; block++) {
+  // loop through blocks of sectors to find the cypher for each block
+  for (unsigned int block = 0; block < blocks; block++) {
 
     // fill the buffer from cache whenever we're outside last cache read
-    // and reset raw_sector to the beginning of the new buffer
     if (block % constants::BLOCKS_PER_CACHE == 0)
       ReadRawSectorCache(block * constants::SECTORS_PER_BLOCK, buffer, verbose);
 
     // assign cypher if all cyphers are found, otherwise set to NULL to find a new cypher
-    cypher = found_all_cyphers ? cyphers[(block - 1) % cypher_number] : NULL;
+    cypher = found_all_cyphers ? cyphers[CypherIndex(block)] : NULL;
 
     for (unsigned int sub_sector = 0; sub_sector < constants::SECTORS_PER_BLOCK; sub_sector++) {
 
@@ -252,23 +250,21 @@ int Dvd::FindKeys(unsigned int blocks = 20, bool verbose = false) {
           memcpy(tmp, raw_sector, constants::RAW_SECTOR_SIZE);
           // try decoding
           cypher = new Cypher(seed, constants::SECTOR_SIZE);
-	  cypher->Decode(tmp, 12);
+	  cypher->Decode64(tmp, 12);
 	  // verify edc
 	  if (raw_edc == ecma_267::calculate(tmp, constants::RAW_SECTOR_SIZE - 4)) {
-            if (cyphers[0] && cyphers[0]->seed == cypher->seed) {
-              // repeated seed means we found all cyphers
+            // repeated seed 1 means we found all cyphers
+            if (cyphers[1] && cyphers[1]->seed == cypher->seed)
 	      found_all_cyphers = true;
-	      // replace this cypher with the first since they match
-	      delete cypher;
-	      cypher = cyphers[0];
-	    } else {
+	    else
               printf(" * Block %02d found key 0x%04x\n", block, cypher->seed);
-	    }
 	    // decode the raw_sector now that we have the correct cypher
-            cypher->Decode(raw_sector, 12);
+            cypher->Decode64(raw_sector, 12);
             break;
-	  } else delete cypher;
-
+	  } else {
+	    delete cypher;
+	    cypher = NULL;
+	  } // END if/else (raw_edc == ...)
         } // END for (seed)
 
         // verify that we successfully found the cypher
@@ -280,7 +276,7 @@ int Dvd::FindKeys(unsigned int blocks = 20, bool verbose = false) {
       } else {
 
 	// verify edc for remaining sectors in the block
-        cypher->Decode(raw_sector, 12);
+        cypher->Decode64(raw_sector, 12);
         if (raw_edc != ecma_267::calculate(raw_sector, constants::RAW_SECTOR_SIZE - 4)) {
           printf("dvdcc:devices:Dvd::FindKeys() Failed to decode sector with seed %04x\n", cypher->seed);
 	  return -1;
