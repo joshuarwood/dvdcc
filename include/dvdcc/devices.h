@@ -205,6 +205,9 @@ unsigned int Dvd::CypherIndex(unsigned int block) {
 
 int Dvd::FindKeys(unsigned int blocks = 20, bool verbose = false) {
   /* Find the cypher keys needed to decode raw sector data.
+   * Should only need 20 blocks since there is usually one
+   * key used to decode the first block followed by a
+   * repeating sequence of 16 keys for the remaining blocks.
    *
    * Args:
    *     blocks (int): number of blocks to check starting from the first sector (default: 20)
