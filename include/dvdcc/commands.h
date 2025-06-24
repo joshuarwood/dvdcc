@@ -32,6 +32,7 @@
 #include <fcntl.h>
 
 #include "constants.h"
+#include "permissions.h"
 
 namespace commands {
 
@@ -167,7 +168,15 @@ int ReadRawBytes(int fd, unsigned char *buffer, int offset, int nbyte,
   cmd[10] = (unsigned char)((  nbyte & 0xFF00) >> 8);      // nbyte MSB
   cmd[11] = (unsigned char) (  nbyte & 0x00FF);            // nbyte LSB
 
-  return Execute(fd, cmd, buffer, nbyte, timeout, verbose, scsi_sense);
+  // vendor command requires root privileges
+  permissions::EnableRootPrivileges();
+
+  int status = Execute(fd, cmd, buffer, nbyte, timeout, verbose, scsi_sense);
+
+  // restore original user privileges
+  permissions::DisableRootPrivileges();
+
+  return status;
 
 }; // END commands::ReadRawBytes()
 
