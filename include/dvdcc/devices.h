@@ -327,6 +327,8 @@ int Dvd::FindDiscType(bool verbose = false) {
   unsigned char buffer[constants::SECTOR_SIZE];
   struct request_sense sense;
 
+  printf("\nFinding Disc Type...\n\n");
+
   // loop through known sector numbers / disc types
   std::map<unsigned int, std::string>::iterator it;
   for (it = constants::sector_numbers.begin(); it != constants::sector_numbers.end(); it++) {
@@ -339,7 +341,10 @@ int Dvd::FindDiscType(bool verbose = false) {
     memset(&sense, 0, sizeof(sense));
     commands::ReadSectors(fd, buffer, sector_number + 100, 1, false, timeout, verbose, &sense);
 
-    if (sense.sense_key == 0x05 && sense.asc == 0x21) return 0;
+    if (sense.sense_key == 0x05 && sense.asc == 0x21) {
+      printf("Found %s with %d sectors.\n", disc_type.c_str(), sector_number);
+      return 0;
+    }
 
   } // END for (it)
 
@@ -378,22 +383,27 @@ int Dvd::DisplayMetaData(bool verbose = false) {
     char *region_id    = strndup((char *)&data[3], 1);
     char *publisher_id = strndup((char *)&data[4], 2);
 
-    // title without additional whitespace
-    char *title        = strndup((char *)&data[0x20], 992);
-    for (int i = 991; i >= 0 && title[i] == ' '; i--)
-      title[i] = '\0';
-
-    // full publisher name
-    std::string publisher = "UNKNOWN";
-    if (auto search = constants::publishers.find(publisher_id); search != constants::publishers.end())
-      publisher = search->second;
+    // full system name
+    std::string system = "UNKNOWN";
+    if (auto search = constants::systems.find(system_id); search != constants::systems.end())
+      system = search->second;
 
     // full region name
     std::string region = "UNKNOWN";
     if (auto search = constants::regions.find(region_id); search != constants::regions.end())
       region = search->second;
 
-    printf("System ID..........: %s\n", system_id);
+    // full publisher name
+    std::string publisher = "UNKNOWN";
+    if (auto search = constants::publishers.find(publisher_id); search != constants::publishers.end())
+      publisher = search->second;
+
+    // title without additional whitespace
+    char *title        = strndup((char *)&data[0x20], 992);
+    for (int i = 991; i >= 0 && title[i] == ' '; i--)
+      title[i] = '\0';
+
+    printf("System ID..........: %s (%s)\n", system_id, system.c_str());
     printf("Game ID............: %s\n", game_id);
     printf("Region.............: %s (%s)\n", region_id, region.c_str());
     printf("Publisher..........: %s (%s)\n", publisher_id, publisher.c_str());

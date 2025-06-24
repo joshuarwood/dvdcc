@@ -43,6 +43,9 @@ unsigned int RAW_SECTOR_SIZE = 2064;
 std::map<unsigned int, std::string> sector_numbers = {
   {712880, "GAMECUBE"}, {2294912, "WII_SINGLE_LAYER"}, {4155840, "WII_DUAL_LAYER"}};
 
+std::map<std::string, std::string> systems = {
+  {"G", "Gamecube"}, {"R", "Wii"}};
+
 std::map<std::string, std::string> regions = {
   {"P", "PAL"}, {"E", "NTSC"}, {"J", "JAP"}, {"U", "AUS" }, {"F", "FRA" },
   {"D", "GER"}, {"I", "ITA" }, {"S", "SPA"}, {"X", "PALX"}, {"Y", "PALY"}};
