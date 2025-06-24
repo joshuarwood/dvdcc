@@ -48,6 +48,7 @@ class Dvd {
 
   int Start(bool verbose);                                                 // start spinning the disc
   int Stop(bool verbose);                                                  // stop spinning the disc
+  int ClearSectorCache(int sector, bool verbose);                          // clear cached blocks of raw sectors
   int ReadRawSectorCache(int sector, unsigned char *buffer, bool verbose); // read 5 blocks of raw sectors
   int FindKeys(unsigned int blocks, bool verbose);                         // find the keys for decoding sectors
   int FindDiscType(bool verbose);                                          // find the disc type (standard, gamecube, wii, etc)
@@ -379,9 +380,13 @@ int Dvd::DisplayMetaData(bool verbose = false) {
     unsigned char buffer[constants::RAW_SECTOR_SIZE * constants::SECTORS_PER_CACHE];
     int status = ReadRawSectorCache(0, buffer, verbose);
 
+    // exit early when there is an error
+    if (status != 0) return status;
+
     // decode the first sector
     cyphers[0]->Decode64(buffer, 12);
 
+    // point to the start of usable data following the 6 sector ID/IED bytes
     unsigned char *data = buffer + 6;
 
     char *system_id    = strndup((char *)&data[0], 1);
@@ -416,12 +421,47 @@ int Dvd::DisplayMetaData(bool verbose = false) {
     printf("Version............: 1.%02u\n", data[7]);
     printf("Game title.........: %s\n", title);
 
+    // check for additional update information found in sector 160 of Wii discs
+    status = ReadRawSectorCache(160, buffer, verbose);
+    // decode the sector
+    cyphers[CypherIndex(160 / constants::SECTORS_PER_BLOCK)]->Decode64(buffer, 12);
+    // point to the start of usable data following the 6 sector ID/IED bytes
+    data = buffer + 6;
+    // compute the update key value
+    unsigned int update_key = (data[4] << 24) + (data[5] << 16) + (data[6] << 8) + data[7];
+    // check the update key value
+    bool has_update = (update_key != 0xA5BED6AE) && (disc_type == "WII_SINGLE_LAYER" || disc_type == "WII_DUAL_LAYER");
+
+    printf("Contains update....: %s (0x%08x)\n", has_update ? "Yes" : "No", update_key);
+
     return status;
 
-  } // END if (disc_type)
+  } // END if (disc_type == "GAMECUBE" ...)
 
   return 0;
 
 }; // END Dvd::DisplayMetaData()
+
+int Dvd::ClearSectorCache(int sector, bool verbose = false) {
+  /* Clear the current sector cache by seeking to the starting sector of
+   * the farthest full cache block. This will either be sector 0 or one less
+   * than the total number of cache blocks.
+   *
+   * Args:
+   *     sector (int): current sector number
+   *     verbose (bool): when true print command details (default: false)
+   *
+   * Returns:
+   *     (int): command status (0 = success, -1 = fail)
+   */
+  unsigned int cache_block_number = sector_number / constants::SECTORS_PER_CACHE;
+  unsigned int last_cache_sector = (cache_block_number - 1) * constants::SECTORS_PER_CACHE;
+  unsigned int farthest_sector = sector < last_cache_sector - sector ? last_cache_sector : 0;
+
+  unsigned char buffer[constants::SECTOR_SIZE];
+
+  return commands::ReadSectors(fd, buffer, farthest_sector, 1, true, timeout, verbose, NULL);
+
+}; // END Dvd::ClearSectorCache()
 
 #endif // DVDCC_DEVICES_H_

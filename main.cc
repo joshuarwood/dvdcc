@@ -38,7 +38,23 @@ int main(void) {
   //dvd.Stop(true);
   dvd.Start();
   dvd.FindDiscType();
-  dvd.FindKeys();
+
+  int retry = 0;
+  while (true) {
+    // stop when we find all keys
+    if (dvd.FindKeys() == 0)
+      break;
+
+    // otherwise try to flush current cache and retry
+    dvd.ClearSectorCache(0);
+    if (retry++ == 3) {
+      printf("dvdcc:main() Reached maximum retry for FindKeys().\n");
+      printf("dvdcc:main() Exiting...\n");
+      return 0;
+    } // END if (retry)
+
+  } // END while (true)
+
   dvd.DisplayMetaData();
   return 0;
 
