@@ -361,10 +361,16 @@ int Dvd::DisplayMetaData(bool verbose = false) {
    * Returns:
    *     (int): command status (0 = success, -1 = fail)
    */
+  double gb = 1024 * 1024 * 1024;
+
+  double iso_size_gb = double(sector_number) * constants::SECTOR_SIZE / gb;
+  double raw_size_gb = double(sector_number) * constants::RAW_SECTOR_SIZE / gb;
+
   printf("Disc information:\n");
   printf("--------------------\n");
   printf("Disc type..........: %s\n", disc_type.c_str());
-  printf("Disc size..........: %lu\n", sector_number);
+  printf("Disc size..........: %lu sectors (%.2f GB iso, %.2f GB raw)\n",
+         sector_number, iso_size_gb, raw_size_gb);
 
   // additional fields for Gamecube and WII discs
   if (disc_type == "GAMECUBE" || disc_type == "WII_SINGLE_LAYER" || disc_type == "WII_DUAL_LAYER") {
@@ -399,8 +405,8 @@ int Dvd::DisplayMetaData(bool verbose = false) {
       publisher = search->second;
 
     // title without additional whitespace
-    char *title        = strndup((char *)&data[0x20], 992);
-    for (int i = 991; i >= 0 && title[i] == ' '; i--)
+    char *title        = strndup((char *)&data[0x20], 64);
+    for (int i = 63; i >= 0 && title[i] == ' '; i--)
       title[i] = '\0';
 
     printf("System ID..........: %s (%s)\n", system_id, system.c_str());
