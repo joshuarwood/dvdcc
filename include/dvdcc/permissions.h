@@ -29,7 +29,19 @@ void EnableRootPrivileges(void) {
   /* Raises privileges to root. This is needed to execute vendor
    * specific DVD commands like commands::ReadRawBytes()
    */
+  // set root user id
   if (getuid() != 0) seteuid(0);
+
+  // see if it worked by checking the effective user id
+  if (geteuid() != 0) {
+    printf("dvdcc:permissions:EnableRootPrivileges() Unable to use root privileges.\n\n");
+    printf("  Try:\n");
+    printf("    chown root:root dvdcc\n");
+    printf("    chmod u+s dvdcc\n");
+    printf("    ./dvdcc [--device DEVICE] ...\n\n");
+    printf("dvdcc:permissions:EnableRootPrivileges() Exiting...\n");
+    exit(0);
+  }
 
 }; // END permissions::EnableRootPrivileges()
 
