@@ -18,12 +18,19 @@
 #define DVDCC_PROGRESS_H_
 
 #include <time.h>
+#include <string.h>
 #include <stdio.h>
 #include <unistd.h>
 
 class Progress {
 
  public:
+  Progress(const char *s = NULL, bool only_elapsed = false) : only_elapsed(only_elapsed) {
+    if (s == NULL)
+      strcpy(description, "Progress");
+    else strcpy(description, s);
+  };
+
   void Start(void);
   void Update(int n, int total);
   void Finish(void);
@@ -33,6 +40,10 @@ class Progress {
   float frac;
   time_t t0;
 
+  bool only_elapsed;
+
+  char tmp[1024];
+  char description[512];
   char bar[32];
   char elapsed[32];
   char remaining[32];
@@ -53,7 +64,7 @@ void Progress::Finish(void) {
 
 }; // END Progress::Finish()
 
-void Progress::Update(int n, int total) {
+void Progress::Update(int n = 0, int total = 10) {
   /* Update the progress bar
    *
    * Args:
@@ -69,8 +80,11 @@ void Progress::Update(int n, int total) {
   DeltaString(elapsed, dt);
   DeltaString(remaining, dt * (1/frac - 1));
 
-  printf("\r\x1b[KProgress %s %5.1f%% | elapsed %s remaining %s ",
-         bar, 100 * frac, elapsed, remaining);
+  if (only_elapsed)
+    printf("\r\x1b[K%s elapsed %s", description, elapsed);
+  else
+    printf("\r\x1b[K%s %s %5.1f%% | elapsed %s remaining %s ",
+           description, bar, 100 * frac, elapsed, remaining);
   fflush(stdout);
 
 }; // END Progress::Update()
