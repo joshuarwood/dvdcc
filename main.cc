@@ -56,6 +56,36 @@ int main(int argc, char **argv) {
     return 0;
   }
 
+  const int buflen = 36;
+  unsigned char cmd[12];
+  unsigned char buffer[buflen];
+
+  memset(cmd, 0, 12);
+  memset(buffer, 0, buflen);
+
+  // key is to wait for drive to enter a standby state before attempting cache reads.
+  // active = 0x01
+  // standby = 0x03
+  cmd[0] = 0x4A;
+  cmd[1] = 1; // polled
+  //cmd[4] = 0x40; // device busy bit 6
+  //cmd[4] = 0x2; // operational change bit 1
+  cmd[4] = 0x4; // power status bit 2
+  cmd[7] = 0;  // allocation MSB
+  cmd[8] = 8; // allocation LSB
+
+  for (int j=0; j<10; j++) {
+    //commands::Execute(dvd.fd, cmd, buffer, buflen, 1, true, NULL);
+    commands::GetEventStatus(dvd.fd, buffer, constants::EventType::kPowerManagement, true, 16, 1, true, NULL);
+    for (int i=0; i<16; i++)
+      printf(" %02x", buffer[i]);
+    printf("\n");
+    sleep(1);
+  }
+
+  return 0;
+
+
   // should start with a test ready check loop
   // should also test sequential blocks
 

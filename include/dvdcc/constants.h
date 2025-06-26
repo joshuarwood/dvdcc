@@ -40,6 +40,21 @@ unsigned int SECTORS_PER_CACHE = BLOCKS_PER_CACHE * SECTORS_PER_BLOCK;
 
 unsigned int RAW_SECTOR_SIZE = 2064;
 
+enum class PowerStates {
+  kActive = 0x01,
+  kIdle   = 0x02,
+  kStandy = 0x03,
+  kSleep  = 0x04,
+};
+
+enum class EventType {
+  kOperationalChange = 0x02,
+  kPowerManagement   = 0x04,
+  kExternalRequest   = 0x08,
+  kMedia             = 0x10,
+  kDeviceBusy        = 0x40,
+};
+
 std::map<unsigned int, std::string> sector_numbers = {
   {712880, "GAMECUBE"}, {2294912, "WII_SINGLE_LAYER"}, {4155840, "WII_DUAL_LAYER"}};
 

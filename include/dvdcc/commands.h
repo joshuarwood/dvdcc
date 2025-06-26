@@ -304,6 +304,45 @@ int PreventRemoval(int fd, bool prevent, int timeout, bool verbose, request_sens
 
 }; // END commands::PreventRemoval()
 
+int GetEventStatus(int fd, unsigned char *buffer, constants::EventType event_type, bool poll,
+                   unsigned int allocation, int timeout, bool verbose, request_sense *scsi_sense) {
+  /* Get an event status notification.
+   *
+   * Type  Description         Constant
+   * 0x02  Operational Change  constants::EventType::kOperationalChange
+   * 0x04  Power Management    constants::EventType::kPowerManagement
+   * 0x08  External Request    constants::EventType::kExternalRequest
+   * 0x10  Media               constants::EventType::kMedia
+   * 0x40  Device Busy         constants::EventType::kDeviceBusy
+   *
+   * Args:
+   *     fd (int): the file descriptor of the drive
+   *     buffer (unsigned char *): pointer to the buffer where bytes
+   *                               returned by the command are placed
+   *     event_type (unsigned char): event type (see Description above)
+   *     poll (bool): use polling method when true
+   *     allocation (unsigned int): byte allocation (>4 returns notification packet)
+   *     timeout (int): timeout duration in integer seconds
+   *     verbose (bool): set to true to print more details to stdout
+   *     scsi_sense (request_sense *): pointer to SCSI sense keys
+   *
+   * Returns:
+   *     (int): command status (-1 means fail)
+   */
+  unsigned char cmd[12];
+
+  memset(cmd, 0, 12);
+
+  cmd[0] = 0x4A;                                        // get event status notification command
+  cmd[1] = (unsigned char)poll;                         // use polling when true
+  cmd[4] = (unsigned char)event_type;                   // event type
+  cmd[7] = (unsigned char)((allocation & 0xFF00) >> 8); // allocation MSB
+  cmd[8] = (unsigned char) (allocation & 0x00FF);       // allocation LSB
+
+  return Execute(fd, cmd, buffer, allocation, timeout, verbose, scsi_sense);
+
+}; // END commands::GetEventStatus()
+
 } // namespace commands
 
 #endif // DVDCC_COMMANDS_H_
