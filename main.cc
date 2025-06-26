@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
 
   // open drive with 1 second timeout setting
   Dvd dvd(options.device_path, 1);
-  printf("\nFound drive model: %s\n", dvd.model);
+  printf("Found drive model: %s\n", dvd.model);
 
   // mutually exclusive load/eject commands
   if (options.load) {
@@ -62,7 +62,8 @@ int main(int argc, char **argv) {
 
   int retry = 0;
   printf("\nChecking if drive is ready...\n");
-  while (dvd.PollPowerState(options.verbose) == (int)constants::PowerStates::kActive) {
+  while ((dvd.PollReady(options.verbose) != 0) ||
+         (dvd.PollPowerState(options.verbose) == (int)constants::PowerStates::kActive)) {
     if (++retry == 1) {
       printf("Waiting for activity to stop...\n");
       fflush(stdout);
@@ -73,6 +74,7 @@ int main(int argc, char **argv) {
     }
     sleep(1);
   } // END while (dvd.PollPower...)
+  printf("Ready.\n");
 
   return 0;
 

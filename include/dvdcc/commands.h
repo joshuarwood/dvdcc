@@ -343,6 +343,27 @@ int GetEventStatus(int fd, unsigned char *buffer, constants::EventType event_typ
 
 }; // END commands::GetEventStatus()
 
+int TestUnitReady(int fd, int timeout, bool verbose, request_sense *scsi_sense) {
+  /* Test if the drive is ready to receive commands.
+   *
+   * Args:
+   *     fd (int): the file descriptor of the drive
+   *     timeout (int): timeout duration in integer seconds
+   *     verbose (bool): set to true to print more details to stdout
+   *     scsi_sense (request_sense *): pointer to SCSI sense keys
+   *
+   * Returns:
+   *     (int): command status (-1 means fail)
+   */
+  unsigned char cmd[12];
+  unsigned char buffer[8];
+
+  memset(cmd, 0, 12); // empty command corresponds to test unit ready 0x00
+
+  return Execute(fd, cmd, buffer, 8, timeout, verbose, scsi_sense);
+
+}; // END commands::TestUnitReady()
+
 } // namespace commands
 
 #endif // DVDCC_COMMANDS_H_
