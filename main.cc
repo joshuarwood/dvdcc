@@ -59,58 +59,20 @@ int main(int argc, char **argv) {
   // should start with a test ready check loop
   // should also test sequential blocks
 
-  //commands::AbortTest(dvd.fd, dvd.timeout, true, NULL);
-  return 0;
-  //dvd.Stop();
-  //sleep(1);
-  dvd.Start();
-  //dvd.ClearSectorCache(0);
-  const int buflen = constants::RAW_SECTOR_SIZE * constants::SECTORS_PER_CACHE;
-  unsigned char buffer[buflen];
-  dvd.ReadRawSectorCache(0, buffer);
-  dvd.ReadRawSectorCache(10000, buffer);
-  dvd.ReadRawSectorCache(0, buffer, true);
-  unsigned int sector0 = dvd.RawSectorId(buffer);
-  /*for (int i=0; i<80; i++) {
-    unsigned int sector = dvd.RawSectorId(buffer + i * 2064);
-    printf("sector %d\n", sector - sector0);
-    printf(" %02x %02x %02x %02x\n", buffer[i * 2064], buffer[i*2064+1], buffer[i*2064+2], buffer[i*2064+3]);
-  }*/
-  return 0;
-  /*
-  //dvd.Stop(true);
-  commands::AbortTest(dvd.fd, dvd.timeout, true, NULL); 
-  return 0;
-  sleep(1);
-  dvd.Start(true);
-  sleep(1);
-  dvd.Stop(true);
-  sleep(1);
-  dvd.Start(true);
-  return 0;
-  //dvd.Stop(true);
-  //return 0;
-  */
-  /*
-  for (int i=0; i <10; i++) {
-    dvd.Stop(true);
-    sleep(1);
-  }
-  return 0;*/
-  dvd.Start(true);
-  dvd.FindDiscType(true);
-  dvd.FindKeys(20, true) == 0;
-  return 0;
+  // start spinning the disc and determine disc type
+  dvd.Start(options.verbose);
+  dvd.FindDiscType(options.verbose);
 
+  // find the keys needed to decode disc data
   int retry = 0;
   while (true) {
     // stop when we find all keys
-    if (dvd.FindKeys(20, true) == 0)
+    if (dvd.FindKeys(20, options.verbose) == 0)
       break;
 
     // otherwise try to flush current cache and retry
-    dvd.ClearSectorCache(0);
-    if (retry++ == 3) {
+    dvd.ClearSectorCache(0, options.verbose);
+    if (retry++ == 5) {
       printf("dvdcc:main() Reached maximum retry for FindKeys().\n");
       printf("dvdcc:main() Exiting...\n");
       return 0;
@@ -118,29 +80,9 @@ int main(int argc, char **argv) {
 
   } // END while (true)
 
+  // display full disc info
   dvd.DisplayMetaData();
+
   return 0;
 
-  /*
-  // prepare to read
-  FILE *f = fopen("test.bin", "wb");
-  unsigned char buffer[constants::RAW_SECTOR_SIZE * constants::SECTORS_PER_CACHE];
-
-  // start the progress bar
-  Progress progress;
-  progress.Start();
-
-  // read sectors and write to file
-  dvd.Start(true);
-  for (int sector = 0; sector < constants::disc_sector_no["GAMECUBE"]; sector += constants::SECTORS_PER_CACHE) {
-    dvd.ReadRawSectorCache(sector, buffer, false);
-    fwrite(buffer, 1, sizeof(buffer), f);
-    if (sector % 100 == 0)
-        progress.Update(sector, constants::disc_sector_no["GAMECUBE"]);
-    if (sector > 500)
-	 break;
-  }
-  progress.Finish();
-  fclose(f);
-*/
 };
