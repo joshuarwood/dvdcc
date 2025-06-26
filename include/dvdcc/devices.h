@@ -50,6 +50,7 @@ class Dvd {
   int Stop(bool verbose);                                                  // stop spinning the disc
   int Load(bool verbose);                                                  // load the disc
   int Eject(bool verbose);                                                 // eject the disc
+  int PollPowerState(bool verbose);                                        // return the drive power state
   int ClearSectorCache(int sector, bool verbose);                          // clear cached blocks of raw sectors
   int ReadRawSectorCache(int sector, unsigned char *buffer, bool verbose); // read 5 blocks of raw sectors
   int FindKeys(unsigned int blocks, bool verbose);                         // find the keys for decoding sectors
@@ -501,5 +502,21 @@ int Dvd::ClearSectorCache(int sector, bool verbose = false) {
   return commands::ReadSectors(fd, buffer, farthest_sector, 1, true, timeout, verbose, NULL);
 
 }; // END Dvd::ClearSectorCache()
+
+int Dvd::PollPowerState(bool verbose = false) {
+
+  const int buflen = 16;
+  unsigned char buffer[buflen];
+
+  bool poll = true;
+
+  int status = commands::GetEventStatus(fd, buffer, constants::EventType::kPowerManagement, poll, buflen, timeout, verbose, NULL);
+
+  if (status < 0)
+    return status;
+
+  return (int)buffer[5];
+
+}; // END Dvd::PollPowerState()
 
 #endif // DVDCC_DEVICES_H_

@@ -41,10 +41,10 @@ unsigned int SECTORS_PER_CACHE = BLOCKS_PER_CACHE * SECTORS_PER_BLOCK;
 unsigned int RAW_SECTOR_SIZE = 2064;
 
 enum class PowerStates {
-  kActive = 0x01,
-  kIdle   = 0x02,
-  kStandy = 0x03,
-  kSleep  = 0x04,
+  kActive  = 0x01,
+  kIdle    = 0x02,
+  kStandby = 0x03,
+  kSleep   = 0x04,
 };
 
 enum class EventType {
