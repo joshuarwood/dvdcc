@@ -60,27 +60,38 @@ int main(int argc, char **argv) {
     return 0;
   }
 
-  int retry = 0;
-  printf("\nChecking if drive is ready...\n");
-  while ((dvd.PollReady(options.verbose) != 0) ||
-         (dvd.PollPowerState(options.verbose) == (int)constants::PowerStates::kActive)) {
-    if (++retry == 1) {
-      printf("Waiting for activity to stop...\n");
-      fflush(stdout);
-    } else if (retry == 1000) {
+  // make sure we wait for drive activity to stop before continuing,
+  // otherwise background commands might overwrite the drive cache
+  // as we try to read it
+  int retry = 0, good = 0;
+  printf("\nChecking if drive is ready...\n\n");
+  Progress progress("Waiting for standby state...", true);
+  progress.Start();
+  while (true) {
+
+    bool ready = (dvd.PollReady(options.verbose) == 0);
+    bool active = (dvd.PollPowerState(options.verbose) == (int)constants::PowerStates::kActive);
+
+    good += (ready && !active);
+    retry++;
+
+    // only break after verifying the drive is ready 3 consecutive times
+    // to avoid triggering on the transition between unready and active states
+    if (good == 3) break;
+
+    if (retry != good) progress.Update();
+
+    if (retry == 1000) {
+      progress.Finish();
       printf("\n\ndvdcc:main() Drive activity did not stop after 1000 seconds.");
       printf("\ndvdcc:main() Exiting...\n");
       exit(0);
     }
     sleep(1);
   } // END while (dvd.PollPower...)
-  printf("Ready.\n");
 
-  return 0;
-
-
-  // should start with a test ready check loop
-  // should also test sequential blocks
+  // add back white space that was over-written by progress
+  if (retry > good) printf("\n\n");
 
   // start spinning the disc and determine disc type
   dvd.Start(options.verbose);
@@ -94,6 +105,7 @@ int main(int argc, char **argv) {
       break;
 
     // otherwise try to flush current cache and retry
+    dvd.Stop();
     dvd.ClearSectorCache(0, options.verbose);
     if (retry++ == 5) {
       printf("dvdcc:main() Reached maximum retry for FindKeys().\n");
