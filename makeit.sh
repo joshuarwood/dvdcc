@@ -1,3 +1,3 @@
-g++ -o test main.cc -Iinclude
-chown root:root test
-chmod u+s test
+g++ -o dvdcc main.cc -Iinclude
+chown root:root dvdcc
+chmod u+s dvdcc
