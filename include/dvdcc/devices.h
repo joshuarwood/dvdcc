@@ -109,7 +109,7 @@ int Dvd::Start(bool verbose = false) {
   if (verbose)
     printf("dvdcc:devices:Dvd:Start() Starting the drive.\n");
 
-  return commands::StartStop(fd, true, false, timeout, verbose, NULL);
+  return commands::StartStop(fd, true, false, 0, timeout, verbose, NULL);
 
 }; // END Dvd::Start()
 
@@ -125,7 +125,7 @@ int Dvd::Stop(bool verbose = false) {
   if (verbose)
     printf("dvdcc:devices:Dvd:Stop() Stopping the drive.\n");
 
-  return commands::StartStop(fd, false, false, timeout, verbose, NULL);
+  return commands::StartStop(fd, false, false, 0, timeout, verbose, NULL);
 
 }; // END Dvd::Stop()
 
@@ -141,7 +141,7 @@ int Dvd::Load(bool verbose = false) {
   if (verbose)
     printf("dvdcc:devices:Dvd:Load() Loading the drive.\n");
 
-  return commands::StartStop(fd, true, true, timeout, verbose, NULL);
+  return commands::StartStop(fd, true, true, 0, timeout, verbose, NULL);
 
 }; // END Dvd::Load()
 
@@ -161,7 +161,7 @@ int Dvd::Eject(bool verbose = false) {
   commands::PreventRemoval(fd, false, timeout, verbose, NULL);
 
   // eject
-  return commands::StartStop(fd, false, true, timeout, verbose, NULL);
+  return commands::StartStop(fd, false, true, 0, timeout, verbose, NULL);
 
 }; // END Dvd::Eject()
 
@@ -275,7 +275,7 @@ int Dvd::FindKeys(unsigned int blocks = 20, bool verbose = false) {
 
   bool found_all_cyphers = false; // set to true once we find all cyphers
 
-  printf("\nFinding DVD keys...\n\n");
+  printf("Finding DVD keys...\n\n");
 
   // loop through blocks of sectors to find the cypher for each block
   for (unsigned int block = 0; block < blocks; block++) {
@@ -368,7 +368,7 @@ int Dvd::FindDiscType(bool verbose = false) {
   unsigned char buffer[constants::SECTOR_SIZE];
   struct request_sense sense;
 
-  printf("\nFinding Disc Type...\n\n");
+  printf("Finding Disc Type...\n\n");
 
   // loop through known sector numbers / disc types
   std::map<unsigned int, std::string>::iterator it;
@@ -383,7 +383,7 @@ int Dvd::FindDiscType(bool verbose = false) {
     commands::ReadSectors(fd, buffer, sector_number + 100, 1, false, timeout, verbose, &sense);
 
     if (sense.sense_key == 0x05 && sense.asc == 0x21) {
-      printf("Found %s with %d sectors.\n", disc_type.c_str(), sector_number);
+      printf("Found %s with %d sectors.\n\n", disc_type.c_str(), sector_number);
       return 0;
     }
 

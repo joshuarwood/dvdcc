@@ -242,7 +242,7 @@ int Info(int fd, char *model_str, int timeout, bool verbose, request_sense *scsi
 
 }; // END commands::Info()
 
-int StartStop(int fd, bool start, bool loej, int timeout, bool verbose, request_sense *scsi_sense) {
+int StartStop(int fd, bool start, bool loej, unsigned char power, int timeout, bool verbose, request_sense *scsi_sense) {
   /* Performs disc start/stop as well as load/eject.
    *
    * LoEj   Start   Operation
@@ -256,6 +256,7 @@ int StartStop(int fd, bool start, bool loej, int timeout, bool verbose, request_
    *     start (bool): start the disc spinning when true, stop when false
    *     loej (bool): eject the disc if permitted when true and start is false,
    *                  load the disc if true and start is true
+   *     power (unsigned char): power condition (0 = no change, 2 = idle, 3 = standby, 5 = sleep)
    *     timeout (int): timeout duration in integer seconds
    *     verbose (bool): set to true to print more details to stdout
    *     scsi_sense (request_sense *): pointer to SCSI sense keys
@@ -271,7 +272,7 @@ int StartStop(int fd, bool start, bool loej, int timeout, bool verbose, request_
   memset(buffer, 0, buflen);
 
   cmd[0] = constants::SBC_START_STOP;
-  cmd[4] = (unsigned char)start + (((unsigned char)loej) << 1);
+  cmd[4] = (unsigned char)start + (((unsigned char)loej) << 1) + (power << 4);
 
   return Execute(fd, cmd, buffer, buflen, timeout, verbose, scsi_sense);
 
