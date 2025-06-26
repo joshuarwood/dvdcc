@@ -1,9 +1,5 @@
 /* Copyright (C) 2025     Josh Wood
  *
- * This portion is based on the friidump project written by:
- *              Arep
- *              https://github.com/bradenmcd/friidump
- *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2

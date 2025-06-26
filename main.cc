@@ -21,6 +21,8 @@
  */
 
 #include <time.h>
+#include <unistd.h>
+#include "dvdcc/options.h"
 #include "dvdcc/constants.h"
 #include "dvdcc/cypher.h"
 #include "dvdcc/progress.h"
@@ -29,20 +31,82 @@
 #include "dvdcc/commands.h"
 #include <iostream>
 
-int main(void) {
+int main(int argc, char **argv) {
+
+  // welcome message
+  printf("dvdcc version 0.2.0, Copyright (C) 2025 Josh Wood\n"
+         "dvdcc comes with ABSOLUTELY NO WARRANTY; for details see LICENSE.\n"
+         "This is free software, and you are welcome to redistribute it\n"
+         "under certain conditions; see LICENSE for details.\n\n");
+
+  Options options;
+  options.Parse(argc, argv);
+
+  printf("\nOptions:\n");
+
+  printf(" device %s\n", options.device_path);
+  printf(" eject  %d\n", options.eject);
+  printf(" load   %d\n", options.load);
+  printf(" iso    %d\n", options.iso);
+  printf(" raw    %d\n", options.raw);
+  printf(" resume %d\n", options.resume);
+
+  exit(0);
 
   // open drive
-  Dvd dvd("/dev/sr0");
+  Dvd dvd("/dev/sr0", 1, true);
   printf("\nFound drive model: %s\n", dvd.model);
 
-  //dvd.Stop(true);
+  // should start with a test ready check loop
+  // should also test sequential blocks
+
+  commands::AbortTest(dvd.fd, dvd.timeout, true, NULL);
+  return 0;
+  //dvd.Stop();
+  //sleep(1);
   dvd.Start();
-  dvd.FindDiscType();
+  //dvd.ClearSectorCache(0);
+  const int buflen = constants::RAW_SECTOR_SIZE * constants::SECTORS_PER_CACHE;
+  unsigned char buffer[buflen];
+  dvd.ReadRawSectorCache(0, buffer);
+  dvd.ReadRawSectorCache(10000, buffer);
+  dvd.ReadRawSectorCache(0, buffer, true);
+  unsigned int sector0 = dvd.RawSectorId(buffer);
+  /*for (int i=0; i<80; i++) {
+    unsigned int sector = dvd.RawSectorId(buffer + i * 2064);
+    printf("sector %d\n", sector - sector0);
+    printf(" %02x %02x %02x %02x\n", buffer[i * 2064], buffer[i*2064+1], buffer[i*2064+2], buffer[i*2064+3]);
+  }*/
+  return 0;
+  /*
+  //dvd.Stop(true);
+  commands::AbortTest(dvd.fd, dvd.timeout, true, NULL); 
+  return 0;
+  sleep(1);
+  dvd.Start(true);
+  sleep(1);
+  dvd.Stop(true);
+  sleep(1);
+  dvd.Start(true);
+  return 0;
+  //dvd.Stop(true);
+  //return 0;
+  */
+  /*
+  for (int i=0; i <10; i++) {
+    dvd.Stop(true);
+    sleep(1);
+  }
+  return 0;*/
+  dvd.Start(true);
+  dvd.FindDiscType(true);
+  dvd.FindKeys(20, true) == 0;
+  return 0;
 
   int retry = 0;
   while (true) {
     // stop when we find all keys
-    if (dvd.FindKeys() == 0)
+    if (dvd.FindKeys(20, true) == 0)
       break;
 
     // otherwise try to flush current cache and retry

@@ -22,3 +22,4 @@ TBD
 * the author of the [friidump](https://github.com/bradenmcd/friidump) project
 * the authors of the [unscrambler](https://github.com/saramibreak/unscrambler) project for providing a clear explanation of how to decypher raw DVD data
 * the author of [Wii_disc](https://wiibrew.org/wiki/Wii_disc) for a description of the Wii disc format
+* [SCSI MMC-5 Reference Manual](https://www.13thmonkey.org/documentation/SCSI/mmc5r02c.pdf)
