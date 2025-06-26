@@ -29,7 +29,7 @@
 class Options {
  public:
   Options()
-    : raw(0), iso(0), load(0), eject(0), resume(0), device_path(NULL) {};
+    : raw(0), iso(0), load(0), eject(0), resume(0), verbose(0), device_path(NULL) {};
   ~Options() { free(device_path); };
 
   bool Parse(int argc, char **argv);
@@ -43,6 +43,7 @@ class Options {
            "      --iso         create ISO backup\n"
            "      --raw         create RAW backup\n"
            "      --resume      resume disc backup to existing file(s)\n"
+           "      --verbose     print full command details\n"
            "      --help        display this help and exit\n");
   };
 
@@ -51,6 +52,7 @@ class Options {
   int load;
   int eject;
   int resume;
+  int verbose;
   char *device_path;
 
 };
@@ -67,13 +69,14 @@ bool Options::Parse(int argc, char **argv) {
   while (1) {
 
     static struct option long_options[] = {
-      {"help",   no_argument,       0,       'h'},  
-      {"device", required_argument, 0,       'd'},
-      {"eject",  no_argument,       &eject,  1},
-      {"load",   no_argument,       &load,   1},
-      {"iso",    no_argument,       &iso,    1},
-      {"raw",    no_argument,       &raw,    1},
-      {"resume", no_argument,       &resume, 1},
+      {"help",    no_argument,       0,        'h'},
+      {"device",  required_argument, 0,        'd'},
+      {"eject",   no_argument,       &eject,   1},
+      {"load",    no_argument,       &load,    1},
+      {"iso",     no_argument,       &iso,     1},
+      {"raw",     no_argument,       &raw,     1},
+      {"resume",  no_argument,       &resume,  1},
+      {"verbose", no_argument,       &verbose, 1},
       {0, 0, 0, 0}
     };
 
@@ -110,7 +113,7 @@ bool Options::Parse(int argc, char **argv) {
   } // END while (1)
 
   if (device_path == NULL) {
-    printf("dvdcc:options:Options:Parse() User must specific path with --device.\n");
+    printf("dvdcc:options:Options:Parse() User must specific device path with --device.\n");
     printf("dvdcc:options:Options:Parse() Exiting...\n");
     exit(1);
   }
