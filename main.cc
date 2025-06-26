@@ -39,28 +39,27 @@ int main(int argc, char **argv) {
          "This is free software, and you are welcome to redistribute it\n"
          "under certain conditions; see LICENSE for details.\n\n");
 
+  // parse command line options
   Options options;
   options.Parse(argc, argv);
 
-  printf("\nOptions:\n");
-
-  printf(" device %s\n", options.device_path);
-  printf(" eject  %d\n", options.eject);
-  printf(" load   %d\n", options.load);
-  printf(" iso    %d\n", options.iso);
-  printf(" raw    %d\n", options.raw);
-  printf(" resume %d\n", options.resume);
-
-  exit(0);
-
-  // open drive
-  Dvd dvd("/dev/sr0", 1, true);
+  // open drive with 1 second timeout setting
+  Dvd dvd(options.device_path, 1);
   printf("\nFound drive model: %s\n", dvd.model);
+
+  // mutually exclusive load/eject commands
+  if (options.load) {
+    dvd.Load(options.verbose);
+    return 0;
+  } else if (options.eject) {
+    dvd.Eject(options.verbose);
+    return 0;
+  }
 
   // should start with a test ready check loop
   // should also test sequential blocks
 
-  commands::AbortTest(dvd.fd, dvd.timeout, true, NULL);
+  //commands::AbortTest(dvd.fd, dvd.timeout, true, NULL);
   return 0;
   //dvd.Stop();
   //sleep(1);

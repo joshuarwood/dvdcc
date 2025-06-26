@@ -48,6 +48,8 @@ class Dvd {
 
   int Start(bool verbose);                                                 // start spinning the disc
   int Stop(bool verbose);                                                  // stop spinning the disc
+  int Load(bool verbose);                                                  // load the disc
+  int Eject(bool verbose);                                                 // eject the disc
   int ClearSectorCache(int sector, bool verbose);                          // clear cached blocks of raw sectors
   int ReadRawSectorCache(int sector, unsigned char *buffer, bool verbose); // read 5 blocks of raw sectors
   int FindKeys(unsigned int blocks, bool verbose);                         // find the keys for decoding sectors
@@ -105,7 +107,7 @@ int Dvd::Start(bool verbose = false) {
   if (verbose)
     printf("dvdcc:devices:Dvd:Start() Starting the drive.\n");
 
-  return commands::Spin(fd, true, timeout, verbose, NULL);
+  return commands::StartStop(fd, true, false, timeout, verbose, NULL);
 
 }; // END Dvd::Start()
 
@@ -121,9 +123,45 @@ int Dvd::Stop(bool verbose = false) {
   if (verbose)
     printf("dvdcc:devices:Dvd:Stop() Stopping the drive.\n");
 
-  return commands::Spin(fd, false, timeout, verbose, NULL);
+  return commands::StartStop(fd, false, false, timeout, verbose, NULL);
 
 }; // END Dvd::Stop()
+
+int Dvd::Load(bool verbose = false) {
+  /* Load the disc.
+   *
+   * Args:
+   *     verbose (bool): when true print details from StartStop() command (default: false)
+   *
+   * Returns:
+   *     (int): command status (-1 means fail)
+   */
+  if (verbose)
+    printf("dvdcc:devices:Dvd:Load() Loading the drive.\n");
+
+  return commands::StartStop(fd, true, true, timeout, verbose, NULL);
+
+}; // END Dvd::Load()
+
+int Dvd::Eject(bool verbose = false) {
+  /* Eject the disc.
+   *
+   * Args:
+   *     verbose (bool): when true print details from commands (default: false)
+   *
+   * Returns:
+   *     (int): command status (-1 means fail)
+   */
+  if (verbose)
+    printf("dvdcc:devices:Dvd:Eject() Ejecting the disc.\n");
+
+  // enable removal
+  commands::PreventRemoval(fd, false, timeout, verbose, NULL);
+
+  // eject
+  return commands::StartStop(fd, false, true, timeout, verbose, NULL);
+
+}; // END Dvd::Eject()
 
 int Dvd::ReadRawSectorCache(int sector, unsigned char *buffer, bool verbose = false) {
   /* Read all raw sectors from the 80 sector cache.

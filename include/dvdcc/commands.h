@@ -242,12 +242,20 @@ int Info(int fd, char *model_str, int timeout, bool verbose, request_sense *scsi
 
 }; // END commands::Info()
 
-int Spin(int fd, bool state, int timeout, bool verbose, request_sense *scsi_sense) {
-  /* Toggles the disc spin state where true = spinning, false = stopped.
+int StartStop(int fd, bool start, bool loej, int timeout, bool verbose, request_sense *scsi_sense) {
+  /* Performs disc start/stop as well as load/eject.
+   *
+   * LoEj   Start   Operation
+   *  0       0     Stop the disc
+   *  0       1     Start the disc and make ready for access
+   *  1       0     Eject the disc if permitted
+   *  1       1     Load the disc
    *
    * Args:
    *     fd (int): the file descriptor of the drive
-   *     state (bool): drive state (true = spinning, false = stopped)
+   *     start (bool): start the disc spinning when true, stop when false
+   *     loej (bool): eject the disc if permitted when true and start is false,
+   *                  load the disc if true and start is true
    *     timeout (int): timeout duration in integer seconds
    *     verbose (bool): set to true to print more details to stdout
    *     scsi_sense (request_sense *): pointer to SCSI sense keys
@@ -263,11 +271,38 @@ int Spin(int fd, bool state, int timeout, bool verbose, request_sense *scsi_sens
   memset(buffer, 0, buflen);
 
   cmd[0] = constants::SBC_START_STOP;
-  cmd[4] = (unsigned char)state;
+  cmd[4] = (unsigned char)start + (((unsigned char)loej) << 1);
 
   return Execute(fd, cmd, buffer, buflen, timeout, verbose, scsi_sense);
 
-}; // END commands::Spin()
+}; // END commands::StartStop()
+
+int PreventRemoval(int fd, bool prevent, int timeout, bool verbose, request_sense *scsi_sense) {
+  /* Set the prevent disc removal state.
+   *
+   * Args:
+   *     fd (int): the file descriptor of the drive
+   *     prevent (bool): prevent disc removal when true, allow when false
+   *     timeout (int): timeout duration in integer seconds
+   *     verbose (bool): set to true to print more details to stdout
+   *     scsi_sense (request_sense *): pointer to SCSI sense keys
+   *
+   * Returns:
+   *     (int): command status (-1 means fail)
+   */
+  const int buflen = 8;
+  unsigned char cmd[12];
+  unsigned char buffer[buflen];
+
+  memset(cmd, 0, 12);
+  memset(buffer, 0, buflen);
+
+  cmd[0] = 0x1E;
+  cmd[4] = (unsigned char)prevent;
+
+  return Execute(fd, cmd, buffer, buflen, timeout, verbose, scsi_sense);
+
+}; // END commands::PreventRemoval()
 
 } // namespace commands
 
