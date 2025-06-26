@@ -80,7 +80,6 @@ bool Options::Parse(int argc, char **argv) {
       {0, 0, 0, 0}
     };
 
-    int option_index = 0;
     int c = getopt_long(argc, argv, "hd:", long_options, NULL);
 
     if (c == -1)
