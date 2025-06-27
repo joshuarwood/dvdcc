@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
   options.Parse(argc, argv);
 
   // open drive with 1 second timeout setting
-  Dvd dvd(options.device_path, 1);
+  Dvd dvd(options.device_path, 1, options.verbose);
   printf("Found drive model: %s\n", dvd.model);
 
   // mutually exclusive load/eject commands
@@ -104,9 +104,10 @@ int main(int argc, char **argv) {
     if (dvd.FindKeys(20, options.verbose) == 0)
       break;
 
-    // otherwise try to flush current cache and retry
-    dvd.Stop();
-    dvd.ClearSectorCache(0, options.verbose);
+    // enter standy to try flushing cache
+    commands::StartStop(dvd.fd, false, false, 3, dvd.timeout, options.verbose, NULL);
+    //dvd.Stop();
+    //dvd.ClearSectorCache(0, options.verbose);
     if (retry++ == 5) {
       printf("dvdcc:main() Reached maximum retry for FindKeys().\n");
       printf("dvdcc:main() Exiting...\n");
@@ -117,6 +118,71 @@ int main(int argc, char **argv) {
 
   // display full disc info
   dvd.DisplayMetaData();
+
+  // break here since no backup is requested
+  if (!options.iso && !options.raw)
+    return 0;
+
+  FILE *fout = fopen("test.iso", "wb");
+
+  // buffer used to store raw data from cache reads
+  const int buflen = constants::RAW_SECTOR_SIZE * constants::SECTORS_PER_CACHE;
+  unsigned char buffer[buflen];
+  unsigned char *raw_sector;
+
+  unsigned int i, raw_edc, edc_length = constants::RAW_SECTOR_SIZE - 4;
+
+  // prepare progress tracker
+  strcpy(progress.description, "Progress");
+  progress.only_elapsed = false;
+  progress.Start();
+
+  // loop through dvd sectors
+  for (unsigned int sector = 0; sector < dvd.sector_number; sector++) {
+  //for (unsigned int sector = 0; sector < 160; sector++) {
+
+    // perform cache read if this is the start of a cache block 
+    if (sector % constants::SECTORS_PER_CACHE == 0)
+      dvd.ReadRawSectorCache(sector, buffer, options.verbose);
+
+    // get the cypher index for decoding this sector
+    i = dvd.CypherIndex(sector / constants::SECTORS_PER_BLOCK);
+
+    // point to the raw sector data
+    raw_sector = buffer + sector % constants::SECTORS_PER_CACHE * constants::RAW_SECTOR_SIZE;
+
+    // try decoding the raw sector data
+    for (retry = 0; retry < 20; retry++) {
+      
+      dvd.cyphers[i]->Decode64(raw_sector, 12);
+
+      raw_edc = dvd.RawSectorEdc(raw_sector);
+      //printf("raw_edc %08x, edc %08x\n", raw_edc, ecma_267::calculate(raw_sector, constants::RAW_SECTOR_SIZE - 4));
+
+      if (raw_edc == ecma_267::calculate(raw_sector, edc_length))
+        break;
+
+      printf("\r\x1b[KRetrying sector %lu (attempt %d)\n", sector, retry+1);
+
+      if (retry == 19) {
+        printf("dvdcc:main() Cannot read sector %lu\n", sector);
+        printf("dvdcc:main() Exiting...\n");
+        return 1;
+      }
+
+      // decode failed so retry after clearing cache
+      dvd.Stop();
+      dvd.ClearSectorCache(sector, options.verbose);
+      dvd.ReadRawSectorCache(sector, buffer, options.verbose);
+
+    } // END for (retry)
+
+    progress.Update(sector, dvd.sector_number);
+
+  } // END for (sector)
+  progress.Finish();
+
+  fclose(fout);
 
   return 0;
 
