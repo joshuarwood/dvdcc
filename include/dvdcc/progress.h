@@ -25,7 +25,7 @@
 class Progress {
 
  public:
-  Progress(const char *s = NULL, bool only_elapsed = false) : only_elapsed(only_elapsed) {
+  Progress(const char *s, bool only_elapsed = false) : only_elapsed(only_elapsed) {
     strcpy(description, s);
   };
 
