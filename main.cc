@@ -1,24 +1,24 @@
-/*
- * Copyright (C) 2025     Josh Wood
- *
- * This portion is based on the friidump project written by:
- *              Arep
- *              https://github.com/bradenmcd/friidump
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- */
+//
+// Copyright (C) 2025     Josh Wood
+//
+// This portion is based on the friidump project written by:
+//              Arep
+//              https://github.com/bradenmcd/friidump
+//
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// as published by the Free Software Foundation; either version 2
+// of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+//
 
 #include <time.h>
 #include <unistd.h>
@@ -60,13 +60,15 @@ int main(int argc, char **argv) {
     return 0;
   }
 
+  printf("\nChecking if drive is ready...\n\n");
+
+  Progress progress("Waiting for standby state...", true);
+  progress.Start();
+
   // make sure we wait for drive activity to stop before continuing,
   // otherwise background commands might overwrite the drive cache
   // as we try to read it
   int retry = 0, good = 0;
-  printf("\nChecking if drive is ready...\n\n");
-  Progress progress("Waiting for standby state...", true);
-  progress.Start();
   while (true) {
 
     bool ready = (dvd.PollReady(options.verbose) == 0);
@@ -88,6 +90,7 @@ int main(int argc, char **argv) {
       exit(0);
     }
     sleep(1);
+
   } // END while (dvd.PollPower...)
 
   // add back white space that was over-written by progress
@@ -105,9 +108,8 @@ int main(int argc, char **argv) {
       break;
 
     // enter standy to try flushing cache
-    commands::StartStop(dvd.fd, false, false, 3, dvd.timeout, options.verbose, NULL);
-    //dvd.Stop();
-    //dvd.ClearSectorCache(0, options.verbose);
+    dvd.Stop();
+    dvd.ClearSectorCache(0, options.verbose);
     if (retry++ == 5) {
       printf("dvdcc:main() Reached maximum retry for FindKeys().\n");
       printf("dvdcc:main() Exiting...\n");
@@ -119,17 +121,27 @@ int main(int argc, char **argv) {
   // display full disc info
   dvd.DisplayMetaData();
 
-  // break here since no backup is requested
+  // break here if no backup is requested
   if (!options.iso && !options.raw)
     return 0;
 
-  FILE *fout = fopen("test.iso", "wb");
+  FILE *fiso;
+  FILE *fraw;
 
-  // buffer used to store raw data from cache reads
+  printf("\nBacking up content...\n");
+  if (options.iso) {
+    printf(" ISO path: test.iso\n");
+    fiso = fopen("test.iso", "wb");
+  }
+  if (options.raw) {
+    printf(" RAW path: test.raw\n");
+    fraw = fopen("test.raw", "wb");
+  }
+
+  // backup loop variables
   const int buflen = constants::RAW_SECTOR_SIZE * constants::SECTORS_PER_CACHE;
   unsigned char buffer[buflen];
   unsigned char *raw_sector;
-
   unsigned int i, raw_edc, edc_length = constants::RAW_SECTOR_SIZE - 4;
 
   // prepare progress tracker
@@ -139,7 +151,6 @@ int main(int argc, char **argv) {
 
   // loop through dvd sectors
   for (unsigned int sector = 0; sector < dvd.sector_number; sector++) {
-  //for (unsigned int sector = 0; sector < 160; sector++) {
 
     // perform cache read if this is the start of a cache block 
     if (sector % constants::SECTORS_PER_CACHE == 0)
@@ -157,10 +168,12 @@ int main(int argc, char **argv) {
       dvd.cyphers[i]->Decode64(raw_sector, 12);
 
       raw_edc = dvd.RawSectorEdc(raw_sector);
-      //printf("raw_edc %08x, edc %08x\n", raw_edc, ecma_267::calculate(raw_sector, constants::RAW_SECTOR_SIZE - 4));
 
-      if (raw_edc == ecma_267::calculate(raw_sector, edc_length))
+      if (raw_edc == ecma_267::calculate(raw_sector, edc_length)) {
+        if (options.iso) fwrite(raw_sector + 12, 1, constants::SECTOR_SIZE, fiso);
+        if (options.raw) fwrite(raw_sector, 1, constants::RAW_SECTOR_SIZE, fraw);
         break;
+      }
 
       printf("\r\x1b[KRetrying sector %lu (attempt %d)\n", sector, retry+1);
 
@@ -182,8 +195,10 @@ int main(int argc, char **argv) {
   } // END for (sector)
   progress.Finish();
 
-  fclose(fout);
+  // close files
+  if (options.iso) fclose(fiso);
+  if (options.raw) fclose(fraw);
 
   return 0;
 
-};
+}; // END main()
