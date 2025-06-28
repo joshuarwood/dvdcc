@@ -18,7 +18,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
 
 #include <time.h>
 #include <unistd.h>
@@ -128,15 +127,16 @@ int main(int argc, char **argv) {
   FILE *fiso;
   FILE *fraw;
 
-  printf("\nBacking up content...\n");
+  printf("\nBacking up content...\n\n");
   if (options.iso) {
-    printf(" ISO path: test.iso\n");
-    fiso = fopen("test.iso", "wb");
+    printf(" ISO path: %s\n", options.iso);
+    fiso = fopen(options.iso, "wb");
   }
   if (options.raw) {
-    printf(" RAW path: test.raw\n");
-    fraw = fopen("test.raw", "wb");
+    printf(" RAW path: %s\n", options.raw);
+    fraw = fopen(options.raw, "wb");
   }
+  printf("\n");
 
   // backup loop variables
   const int buflen = constants::RAW_SECTOR_SIZE * constants::SECTORS_PER_CACHE;

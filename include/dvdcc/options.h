@@ -29,8 +29,8 @@
 class Options {
  public:
   Options()
-    : raw(0), iso(0), load(0), eject(0), resume(0), verbose(0), device_path(NULL) {};
-  ~Options() { free(device_path); };
+    : load(0), eject(0), resume(0), verbose(0), iso(NULL), raw(NULL), device_path(NULL) {};
+  ~Options() { free(iso); free(raw); free(device_path); };
 
   bool Parse(int argc, char **argv);
   void DisplayHelp(void) {
@@ -40,19 +40,20 @@ class Options {
            "  -d, --device      path to the device (example: /dev/sr0)\n"
            "      --eject       eject the disc\n"
            "      --load        load the disc\n"
-           "      --iso         create ISO backup\n"
-           "      --raw         create RAW backup\n"
+           "  -i, --iso         create ISO backup\n"
+           "  -r, --raw         create RAW backup\n"
            "      --resume      resume disc backup to existing file(s)\n"
            "      --verbose     print full command details\n"
            "      --help        display this help and exit\n");
   };
 
-  int raw;
-  int iso;
   int load;
   int eject;
   int resume;
   int verbose;
+
+  char *iso;
+  char *raw;
   char *device_path;
 
 };
@@ -73,14 +74,14 @@ bool Options::Parse(int argc, char **argv) {
       {"device",  required_argument, 0,        'd'},
       {"eject",   no_argument,       &eject,   1},
       {"load",    no_argument,       &load,    1},
-      {"iso",     no_argument,       &iso,     1},
-      {"raw",     no_argument,       &raw,     1},
+      {"iso",     required_argument, 0,        'i'},
+      {"raw",     required_argument, 0,        'r'},
       {"resume",  no_argument,       &resume,  1},
       {"verbose", no_argument,       &verbose, 1},
       {0, 0, 0, 0}
     };
 
-    int c = getopt_long(argc, argv, "hd:", long_options, NULL);
+    int c = getopt_long(argc, argv, "hd:i:r:", long_options, NULL);
 
     if (c == -1)
       break;
@@ -99,6 +100,14 @@ bool Options::Parse(int argc, char **argv) {
 
       case 'd':
         device_path = strdup(optarg);
+        break;
+
+      case 'i':
+        iso = strdup(optarg);
+        break;
+
+      case 'r':
+        raw = strdup(optarg);
         break;
 
       case '?':
