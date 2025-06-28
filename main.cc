@@ -142,7 +142,7 @@ int main(int argc, char **argv) {
   FILE *fraw;
   if (options.raw) {
     printf(" RAW path: %s\n", options.raw);
-    if (options.resume == 0 && access(options.iso, F_OK) == 0) {
+    if (options.resume == 0 && access(options.raw, F_OK) == 0) {
       printf("dvdcc:main() File already exists. Delete or use --resume.\n");
       printf("dvdcc:main() Exiting...\n");
       return 0;
