@@ -1,24 +1,24 @@
-/*
- * Copyright (C) 2025     Josh Wood
- *
- * This portion is based on the friidump project written by:
- *              Arep
- *              https://github.com/bradenmcd/friidump
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- */
+//
+// Copyright (C) 2025     Josh Wood
+//
+// This portion is based on the friidump project written by:
+//              Arep
+//              https://github.com/bradenmcd/friidump
+//
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// as published by the Free Software Foundation; either version 2
+// of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 #ifndef DVDCC_COMMANDS_H_
 #define DVDCC_COMMANDS_H_
 
@@ -38,21 +38,21 @@ namespace commands {
 
 int Execute(int fd, unsigned char *cmd, unsigned char *buffer,
             int buflen, int timeout, bool verbose, request_sense *scsi_sense) {
-  /* Sends a command to the DVD drive using Linux API
-   *
-   * Args:
-   *     fd (int): the file descriptor of the drive
-   *     cmd (unsigned char *): pointer to the 12 command bytes
-   *     buffer (unsigned char *): pointer to the buffer where bytes
-   *                               returned by the command are placed
-   *     buflen (int): length of the buffer
-   *     timeout (int): timeout duration in integer seconds
-   *     verbose (bool): set to true to print more details to stdout
-   *     scsi_sense (request_sense *): pointer to SCSI sense keys
-   *
-   * Returns:
-   *     (int): command status (-1 means fail)
-   */
+  // Sends a command to the DVD drive using Linux API
+  //
+  // Args:
+  //     fd (int): the file descriptor of the drive
+  //     cmd (unsigned char *): pointer to the 12 command bytes
+  //     buffer (unsigned char *): pointer to the buffer where bytes
+  //                               returned by the command are placed
+  //     buflen (int): length of the buffer
+  //     timeout (int): timeout duration in integer seconds
+  //     verbose (bool): set to true to print more details to stdout
+  //     scsi_sense (request_sense *): pointer to SCSI sense keys
+  //
+  // Returns:
+  //     (int): command status (-1 means fail)
+
   struct cdrom_generic_command cgc;
   struct request_sense sense;
 
@@ -87,23 +87,23 @@ int Execute(int fd, unsigned char *cmd, unsigned char *buffer,
 
 int ReadSectors(int fd, unsigned char *buffer, int sector, int sectors,
                 bool streaming, int timeout, bool verbose, request_sense *scsi_sense) {
-  /* Read 2048 byte data sectors from the drive. These do not include the first
-   * 12 bytes (ID, IED, CPR_MAI) or last 4 bytes (EDC) found in raw sectors.
-   *
-   * Args:
-   *     fd (int): file descriptor
-   *     buffer (unsigned char *): buffer for returning raw bytes
-   *     sector (int): starting sector
-   *     sectors (int): number of sectors to read starting from sector
-   *     streaming (bool): use cache streaming mode when true.
-   *                       otherwise force direct access
-   *     timeout (int): timeout duration in integer seconds
-   *     verbose (bool): set to True to print more info
-   *     scsi_sense (request_sense *): pointer to SCSI sense keys
-   *
-   * Returns:
-   *     (int): command status (-1 means fail)
-   */
+  // Read 2048 byte data sectors from the drive. These do not include the first
+  // 12 bytes (ID, IED, CPR_MAI) or last 4 bytes (EDC) found in raw sectors.
+  //
+  // Args:
+  //     fd (int): file descriptor
+  //     buffer (unsigned char *): buffer for returning raw bytes
+  //     sector (int): starting sector
+  //     sectors (int): number of sectors to read starting from sector
+  //     streaming (bool): use cache streaming mode when true.
+  //                       otherwise force direct access
+  //     timeout (int): timeout duration in integer seconds
+  //     verbose (bool): set to True to print more info
+  //     scsi_sense (request_sense *): pointer to SCSI sense keys
+  //
+  // Returns:
+  //     (int): command status (-1 means fail)
+
   unsigned char cmd[12];
 
   memset(cmd, 0, 12);
@@ -126,26 +126,26 @@ int ReadSectors(int fd, unsigned char *buffer, int sector, int sectors,
 
 int ReadRawBytes(int fd, unsigned char *buffer, int offset, int nbyte,
                  int timeout, bool verbose, request_sense *scsi_sense) {
-  /* Reads raw bytes from the drive cache. This cache consists of 2064 byte
-   * raw sectors with ID, IED, CPR_MAI, USER DATA, and EDC fields.
-   *
-   * Note you *must* do the following before using this command:
-   *   1. Execute a read_sectors() command with streaming = True to fill the cache.
-   *   2. Ensure you're running the command with root privileges.
-   *      The command will not work with regular user privileges.
-   *
-   * Args:
-   *     fd (int): file descriptor
-   *     buffer (unsigned char *): buffer for returning raw bytes
-   *     offset (int): starting memory offset within cache
-   *     nbyte (int): number of memory bytes to read starting from offset
-   *     timeout (int, optional): command timeout in seconds
-   *     verbose (bool, optional): set to True to print more info
-   *     scsi_sense (request_sense *): pointer to SCSI sense keys
-   *
-   * Returns:
-   *     (int): command status (-1 means fail)
-   */
+  // Reads raw bytes from the drive cache. This cache consists of 2064 byte
+  // raw sectors with ID, IED, CPR_MAI, USER DATA, and EDC fields.
+  //
+  // Note you *must* do the following before using this command:
+  //   1. Execute a read_sectors() command with streaming = True to fill the cache.
+  //   2. Ensure you're running the command with root privileges.
+  //      The command will not work with regular user privileges.
+  //
+  // Args:
+  //     fd (int): file descriptor
+  //     buffer (unsigned char *): buffer for returning raw bytes
+  //     offset (int): starting memory offset within cache
+  //     nbyte (int): number of memory bytes to read starting from offset
+  //     timeout (int, optional): command timeout in seconds
+  //     verbose (bool, optional): set to True to print more info
+  //     scsi_sense (request_sense *): pointer to SCSI sense keys
+  //
+  // Returns:
+  //     (int): command status (-1 means fail)
+
   u_int32_t address = constants::HITACHI_MEM_BASE + offset;
   unsigned char cmd[12];
 
@@ -181,18 +181,18 @@ int ReadRawBytes(int fd, unsigned char *buffer, int offset, int nbyte,
 }; // END commands::ReadRawBytes()
 
 int ClearCache(int fd, int sector, int timeout, bool verbose, request_sense *scsi_sense) {
-  /* Clears the drive cache by forcing a sector read with zero length.
-   *
-   * Args:
-   *     fd (int): file descriptor
-   *     sector (int): starting sector
-   *     timeout (int, optional): command timeout in seconds
-   *     verbose (bool, optional): set to True to print more info
-   *     scsi_sense (request_sense *): pointer to SCSI sense keys
-   *
-   * Returns:
-   *     (int): command status (-1 means fail)
-   */
+  // Clears the drive cache by forcing a sector read with zero length.
+  //
+  // Args:
+  //     fd (int): file descriptor
+  //     sector (int): starting sector
+  //     timeout (int, optional): command timeout in seconds
+  //     verbose (bool, optional): set to True to print more info
+  //     scsi_sense (request_sense *): pointer to SCSI sense keys
+  //
+  // Returns:
+  //     (int): command status (-1 means fail)
+
   unsigned char cmd[12];
 
   memset(cmd, 0, 12);
@@ -209,18 +209,18 @@ int ClearCache(int fd, int sector, int timeout, bool verbose, request_sense *scs
 }; // END commands::ClearCache()
 
 int Info(int fd, char *model_str, int timeout, bool verbose, request_sense *scsi_sense) {
-  /* Retrieves the drive model string as vendor/prod_id/prod_rev.
-   *
-   * Args:
-   *     fd (int): the file descriptor of the drive
-   *     model_str (char *): the drive model string to return
-   *     timeout (int): timeout duration in integer seconds
-   *     verbose (bool): set to true to print more details to stdout
-   *     scsi_sense (request_sense *): pointer to SCSI sense keys
-   *
-   * Returns:
-   *     (int): command status (-1 means fail)
-   */
+  // Retrieves the drive model string as vendor/prod_id/prod_rev.
+  //
+  // Args:
+  //     fd (int): the file descriptor of the drive
+  //     model_str (char *): the drive model string to return
+  //     timeout (int): timeout duration in integer seconds
+  //     verbose (bool): set to true to print more details to stdout
+  //     scsi_sense (request_sense *): pointer to SCSI sense keys
+  //
+  // Returns:
+  //     (int): command status (-1 means fail)
+
   const int buflen = 36;
   unsigned char cmd[12], buffer[buflen];
 
@@ -243,27 +243,27 @@ int Info(int fd, char *model_str, int timeout, bool verbose, request_sense *scsi
 }; // END commands::Info()
 
 int StartStop(int fd, bool start, bool loej, unsigned char power, int timeout, bool verbose, request_sense *scsi_sense) {
-  /* Performs disc start/stop as well as load/eject.
-   *
-   * LoEj   Start   Operation
-   *  0       0     Stop the disc
-   *  0       1     Start the disc and make ready for access
-   *  1       0     Eject the disc if permitted
-   *  1       1     Load the disc
-   *
-   * Args:
-   *     fd (int): the file descriptor of the drive
-   *     start (bool): start the disc spinning when true, stop when false
-   *     loej (bool): eject the disc if permitted when true and start is false,
-   *                  load the disc if true and start is true
-   *     power (unsigned char): power condition (0 = no change, 2 = idle, 3 = standby, 5 = sleep)
-   *     timeout (int): timeout duration in integer seconds
-   *     verbose (bool): set to true to print more details to stdout
-   *     scsi_sense (request_sense *): pointer to SCSI sense keys
-   *
-   * Returns:
-   *     (int): command status (-1 means fail)
-   */
+  // Performs disc start/stop as well as load/eject.
+  //
+  // LoEj   Start   Operation
+  //  0       0     Stop the disc
+  //  0       1     Start the disc and make ready for access
+  //  1       0     Eject the disc if permitted
+  //  1       1     Load the disc
+  //
+  // Args:
+  //     fd (int): the file descriptor of the drive
+  //     start (bool): start the disc spinning when true, stop when false
+  //     loej (bool): eject the disc if permitted when true and start is false,
+  //                  load the disc if true and start is true
+  //     power (unsigned char): power condition (0 = no change, 2 = idle, 3 = standby, 5 = sleep)
+  //     timeout (int): timeout duration in integer seconds
+  //     verbose (bool): set to true to print more details to stdout
+  //     scsi_sense (request_sense *): pointer to SCSI sense keys
+  //
+  // Returns:
+  //     (int): command status (-1 means fail)
+
   const int buflen = 8;
   unsigned char cmd[12];
   unsigned char buffer[buflen];
@@ -279,18 +279,18 @@ int StartStop(int fd, bool start, bool loej, unsigned char power, int timeout, b
 }; // END commands::StartStop()
 
 int PreventRemoval(int fd, bool prevent, int timeout, bool verbose, request_sense *scsi_sense) {
-  /* Set the prevent disc removal state.
-   *
-   * Args:
-   *     fd (int): the file descriptor of the drive
-   *     prevent (bool): prevent disc removal when true, allow when false
-   *     timeout (int): timeout duration in integer seconds
-   *     verbose (bool): set to true to print more details to stdout
-   *     scsi_sense (request_sense *): pointer to SCSI sense keys
-   *
-   * Returns:
-   *     (int): command status (-1 means fail)
-   */
+  // Set the prevent disc removal state.
+  //
+  // Args:
+  //     fd (int): the file descriptor of the drive
+  //     prevent (bool): prevent disc removal when true, allow when false
+  //     timeout (int): timeout duration in integer seconds
+  //     verbose (bool): set to true to print more details to stdout
+  //     scsi_sense (request_sense *): pointer to SCSI sense keys
+  //
+  // Returns:
+  //     (int): command status (-1 means fail)
+
   const int buflen = 8;
   unsigned char cmd[12];
   unsigned char buffer[buflen];
@@ -307,29 +307,29 @@ int PreventRemoval(int fd, bool prevent, int timeout, bool verbose, request_sens
 
 int GetEventStatus(int fd, unsigned char *buffer, constants::EventType event_type, bool poll,
                    unsigned int allocation, int timeout, bool verbose, request_sense *scsi_sense) {
-  /* Get an event status notification.
-   *
-   * Type  Description         Constant
-   * 0x02  Operational Change  constants::EventType::kOperationalChange
-   * 0x04  Power Management    constants::EventType::kPowerManagement
-   * 0x08  External Request    constants::EventType::kExternalRequest
-   * 0x10  Media               constants::EventType::kMedia
-   * 0x40  Device Busy         constants::EventType::kDeviceBusy
-   *
-   * Args:
-   *     fd (int): the file descriptor of the drive
-   *     buffer (unsigned char *): pointer to the buffer where bytes
-   *                               returned by the command are placed
-   *     event_type (unsigned char): event type (see Description above)
-   *     poll (bool): use polling method when true
-   *     allocation (unsigned int): byte allocation (>4 returns notification packet)
-   *     timeout (int): timeout duration in integer seconds
-   *     verbose (bool): set to true to print more details to stdout
-   *     scsi_sense (request_sense *): pointer to SCSI sense keys
-   *
-   * Returns:
-   *     (int): command status (-1 means fail)
-   */
+  // Get an event status notification.
+  //
+  // Type  Description         Constant
+  // 0x02  Operational Change  constants::EventType::kOperationalChange
+  // 0x04  Power Management    constants::EventType::kPowerManagement
+  // 0x08  External Request    constants::EventType::kExternalRequest
+  // 0x10  Media               constants::EventType::kMedia
+  // 0x40  Device Busy         constants::EventType::kDeviceBusy
+  //
+  // Args:
+  //     fd (int): the file descriptor of the drive
+  //     buffer (unsigned char *): pointer to the buffer where bytes
+  //                               returned by the command are placed
+  //     event_type (unsigned char): event type (see Description above)
+  //     poll (bool): use polling method when true
+  //     allocation (unsigned int): byte allocation (>4 returns notification packet)
+  //     timeout (int): timeout duration in integer seconds
+  //     verbose (bool): set to true to print more details to stdout
+  //     scsi_sense (request_sense *): pointer to SCSI sense keys
+  //
+  // Returns:
+  //     (int): command status (-1 means fail)
+
   unsigned char cmd[12];
 
   memset(cmd, 0, 12);
@@ -345,17 +345,17 @@ int GetEventStatus(int fd, unsigned char *buffer, constants::EventType event_typ
 }; // END commands::GetEventStatus()
 
 int TestUnitReady(int fd, int timeout, bool verbose, request_sense *scsi_sense) {
-  /* Test if the drive is ready to receive commands.
-   *
-   * Args:
-   *     fd (int): the file descriptor of the drive
-   *     timeout (int): timeout duration in integer seconds
-   *     verbose (bool): set to true to print more details to stdout
-   *     scsi_sense (request_sense *): pointer to SCSI sense keys
-   *
-   * Returns:
-   *     (int): command status (-1 means fail)
-   */
+  // Test if the drive is ready to receive commands.
+  //
+  // Args:
+  //     fd (int): the file descriptor of the drive
+  //     timeout (int): timeout duration in integer seconds
+  //     verbose (bool): set to true to print more details to stdout
+  //     scsi_sense (request_sense *): pointer to SCSI sense keys
+  //
+  // Returns:
+  //     (int): command status (-1 means fail)
+
   unsigned char cmd[12];
   unsigned char buffer[8];
 

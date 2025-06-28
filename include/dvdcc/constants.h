@@ -1,23 +1,23 @@
-/* Copyright (C) 2025     Josh Wood
- *
- * This portion is based on the friidump project written by:
- *              Arep
- *              https://github.com/bradenmcd/friidump
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- */
+// Copyright (C) 2025     Josh Wood
+//
+// This portion is based on the friidump project written by:
+//              Arep
+//              https://github.com/bradenmcd/friidump
+//
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// as published by the Free Software Foundation; either version 2
+// of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 #ifndef DVDCC_CONSTANTS_H_
 #define DVDCC_CONSTANTS_H_
 
@@ -65,7 +65,7 @@ std::map<std::string, std::string> regions = {
   {"P", "PAL"}, {"E", "NTSC"}, {"J", "JAP"}, {"U", "AUS" }, {"F", "FRA" },
   {"D", "GER"}, {"I", "ITA" }, {"S", "SPA"}, {"X", "PALX"}, {"Y", "PALY"}};
 
-/* The following list has been derived from http://wiitdb.com/Company/HomePage */
+// The following list has been derived from http://wiitdb.com/Company/HomePage
 std::map<std::string, std::string> publishers = {
   {"01", "Nintendo"},                                      {"02", "Rocket Games / Ajinomoto"},
   {"03", "Imagineer-Zoom"},                                {"04", "Gray Matter"},
