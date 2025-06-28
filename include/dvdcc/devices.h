@@ -472,11 +472,13 @@ int Dvd::DisplayMetaData(bool verbose = false) {
     // check the update key value
     bool has_update = (update_key != 0xA5BED6AE) && (disc_type == "WII_SINGLE_LAYER" || disc_type == "WII_DUAL_LAYER");
 
-    printf("Contains update....: %s (0x%08x)\n", has_update ? "Yes" : "No", update_key);
+    printf("Contains update....: %s (0x%08x)\n\n", has_update ? "Yes" : "No", update_key);
 
     return status;
 
   } // END if (disc_type == "GAMECUBE" ...)
+
+  printf("\n");
 
   return 0;
 
