@@ -124,18 +124,31 @@ int main(int argc, char **argv) {
   if (!options.iso && !options.raw)
     return 0;
 
-  FILE *fiso;
-  FILE *fraw;
+  printf("Backing up content...\n\n");
 
-  printf("\nBacking up content...\n\n");
+  // open file for iso backup
+  FILE *fiso;
   if (options.iso) {
     printf(" ISO path: %s\n", options.iso);
-    fiso = fopen(options.iso, "wb");
-  }
+    if (options.resume == 0 && access(options.iso, F_OK) == 0) {
+      printf("dvdcc:main() File already exists. Delete or use --resume.\n");
+      printf("dvdcc:main() Exiting...\n");
+      return 0;
+    }
+    fiso = fopen(options.iso, options.resume ? "a+b" : "wb");
+  } // END if (options.iso)
+
+  // open file for raw backup
+  FILE *fraw;
   if (options.raw) {
     printf(" RAW path: %s\n", options.raw);
-    fraw = fopen(options.raw, "wb");
-  }
+    if (options.resume == 0 && access(options.iso, F_OK) == 0) {
+      printf("dvdcc:main() File already exists. Delete or use --resume.\n");
+      printf("dvdcc:main() Exiting...\n");
+      return 0;
+    }
+    fraw = fopen(options.raw, options.resume ? "a+b" : "wb");
+  } // END if (options.raw)
   printf("\n");
 
   // backup loop variables
@@ -144,17 +157,31 @@ int main(int argc, char **argv) {
   unsigned char *raw_sector;
   unsigned int i, raw_edc, edc_length = constants::RAW_SECTOR_SIZE - 4;
 
+  // determine starting point based on resume option
+  unsigned int start_sector = 0;
+  if (options.resume) {
+    if (options.iso) { // get start sector from iso when present
+      fseek(fiso, 0, SEEK_END);
+      start_sector = ftell(fiso) / constants::SECTOR_SIZE;
+    } else {
+      fseek(fraw, 0, SEEK_END);
+      start_sector = ftell(fraw) / constants::RAW_SECTOR_SIZE;
+    }
+  } // END if (options.resume)
+
   // prepare progress tracker
   strcpy(progress.description, "Progress");
   progress.only_elapsed = false;
   progress.Start();
 
   // loop through dvd sectors
-  for (unsigned int sector = 0; sector < dvd.sector_number; sector++) {
+  for (unsigned int sector = start_sector; sector < dvd.sector_number; sector++) {
 
-    // perform cache read if this is the start of a cache block 
-    if (sector % constants::SECTORS_PER_CACHE == 0)
+    // perform cache read if this is the start of a cache block or a resume
+    if ((sector % constants::SECTORS_PER_CACHE == 0) || options.resume) {
       dvd.ReadRawSectorCache(sector, buffer, options.verbose);
+      options.resume = 0;
+    }
 
     // get the cypher index for decoding this sector
     i = dvd.CypherIndex(sector / constants::SECTORS_PER_BLOCK);
@@ -170,7 +197,7 @@ int main(int argc, char **argv) {
       raw_edc = dvd.RawSectorEdc(raw_sector);
 
       if (raw_edc == ecma_267::calculate(raw_sector, edc_length)) {
-        if (options.iso) fwrite(raw_sector + 12, 1, constants::SECTOR_SIZE, fiso);
+        if (options.iso) fwrite(raw_sector + 6, 1, constants::SECTOR_SIZE, fiso);
         if (options.raw) fwrite(raw_sector, 1, constants::RAW_SECTOR_SIZE, fraw);
         break;
       }
