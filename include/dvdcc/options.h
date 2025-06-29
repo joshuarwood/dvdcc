@@ -1,23 +1,23 @@
-/* Copyright (C) 2025     Josh Wood
- *
- * This portion is based on the friidump project written by:
- *              Arep
- *              https://github.com/bradenmcd/friidump
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- */
+// Copyright (C) 2025     Josh Wood
+//
+// This portion is based on the friidump project written by:
+//              Arep
+//              https://github.com/bradenmcd/friidump
+//
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// as published by the Free Software Foundation; either version 2
+// of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 #ifndef DVDCC_OPTIONS_H_
 #define DVDCC_OPTIONS_H_
 
@@ -26,13 +26,14 @@
 #include <string.h>
 #include <getopt.h>
 
+// Class for parsing command line options
 class Options {
  public:
   Options()
     : load(0), eject(0), resume(0), verbose(0), iso(NULL), raw(NULL), device_path(NULL) {};
   ~Options() { free(iso); free(raw); free(device_path); };
 
-  bool Parse(int argc, char **argv);
+  void Parse(int argc, char **argv);
   void DisplayHelp(void) {
     printf("Usage: dvdcc --device DEVICE [--eject --load ...]\n"
            "Operate a DVD drive using SCSI commands.\n\n"
@@ -56,9 +57,14 @@ class Options {
   char *raw;
   char *device_path;
 
-};
+}; // END class Options()
 
-bool Options::Parse(int argc, char **argv) {
+void Options::Parse(int argc, char **argv) {
+  // Method to parse command line options
+  //
+  // Args:
+  //     argc (int): length of argv
+  //     argv (char **): array of command line options
 
   // display help when no options are passed
   if (argc == 1) {
@@ -126,7 +132,7 @@ bool Options::Parse(int argc, char **argv) {
     exit(1);
   }
 
-  return true;
+  return;
 
 }; // END Options::Parse()
 

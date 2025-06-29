@@ -24,7 +24,7 @@
 
 #include <stdlib.h>
 
-// Cypher class for creating the cypher key used to decode raw DVD data.
+// Class for creating the cypher key used to decode raw DVD data.
 class Cypher {
 
  public:

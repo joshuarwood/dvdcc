@@ -1,23 +1,23 @@
-/* Copyright (C) 2025     Josh Wood
- *
- * This portion is based on the friidump project written by:
- *              Arep
- *              https://github.com/bradenmcd/friidump
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- */
+// Copyright (C) 2025     Josh Wood
+//
+// This portion is based on the friidump project written by:
+//              Arep
+//              https://github.com/bradenmcd/friidump
+//
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// as published by the Free Software Foundation; either version 2
+// of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 #ifndef DVDCC_DEVICES_H_
 #define DVDCC_DEVICES_H_
 
@@ -36,7 +36,7 @@
 #include "dvdcc/commands.h"
 #include "dvdcc/constants.h"
 
-/* Dvd class for interfacing with a DVD drive. */
+// Class for interfacing with a DVD drive.
 class Dvd {
 
  public:
@@ -75,13 +75,13 @@ class Dvd {
 
 Dvd::Dvd(const char *path, int timeout = 1, bool verbose = false)
     : timeout(timeout), cypher_number(0), sector_number(0), disc_type("UNKOWN"), cyphers{} {
-  /* Constructor that opens a connection to the DVD drive.
-   *
-   * Args:
-   *     path (const char *): path to the drive, typically /dev/sr0
-   *     timeout (int): timeout duration in integer seconds (default: 1)
-   *     verbose (bool): when true print details from drive_info() command (default: false) 
-   */
+  // Constructor that opens a connection to the DVD drive.
+  //
+  // Args:
+  //     path (const char *): path to the drive, typically /dev/sr0
+  //     timeout (int): timeout duration in integer seconds (default: 1)
+  //     verbose (bool): when true print details from drive_info() command (default: false) 
+
   if (verbose)
     printf("dvdcc:devices:Dvd() Opening %s\n", path);
 
@@ -98,14 +98,14 @@ Dvd::Dvd(const char *path, int timeout = 1, bool verbose = false)
 }; // END Dvd::Dvd()
 
 int Dvd::Start(bool verbose = false) {
-  /* Start spinning the disc.
-   *
-   * Args:
-   *     verbose (bool): when true print details from drive_state() command (default: false)
-   *
-   * Returns:
-   *     (int): command status (-1 means fail)
-   */
+  // Start spinning the disc.
+  //
+  // Args:
+  //     verbose (bool): when true print details from drive_state() command (default: false)
+  //
+  // Returns:
+  //     (int): command status (-1 means fail)
+
   if (verbose)
     printf("dvdcc:devices:Dvd:Start() Starting the drive.\n");
 
@@ -114,14 +114,14 @@ int Dvd::Start(bool verbose = false) {
 }; // END Dvd::Start()
 
 int Dvd::Stop(bool verbose = false) {
-  /* Stop spinning the disc.
-   *
-   * Args:
-   *     verbose (bool): when true print details from drive_state() command (default: false)
-   *
-   * Returns:
-   *     (int): command status (-1 means fail)
-   */
+  // Stop spinning the disc.
+  //
+  // Args:
+  //     verbose (bool): when true print details from drive_state() command (default: false)
+  //
+  // Returns:
+  //     (int): command status (-1 means fail)
+
   if (verbose)
     printf("dvdcc:devices:Dvd:Stop() Stopping the drive.\n");
 
@@ -130,14 +130,14 @@ int Dvd::Stop(bool verbose = false) {
 }; // END Dvd::Stop()
 
 int Dvd::Load(bool verbose = false) {
-  /* Load the disc.
-   *
-   * Args:
-   *     verbose (bool): when true print details from StartStop() command (default: false)
-   *
-   * Returns:
-   *     (int): command status (-1 means fail)
-   */
+  // Load the disc.
+  //
+  // Args:
+  //     verbose (bool): when true print details from StartStop() command (default: false)
+  //
+  // Returns:
+  //     (int): command status (-1 means fail)
+
   if (verbose)
     printf("dvdcc:devices:Dvd:Load() Loading the drive.\n");
 
@@ -146,14 +146,14 @@ int Dvd::Load(bool verbose = false) {
 }; // END Dvd::Load()
 
 int Dvd::Eject(bool verbose = false) {
-  /* Eject the disc.
-   *
-   * Args:
-   *     verbose (bool): when true print details from commands (default: false)
-   *
-   * Returns:
-   *     (int): command status (-1 means fail)
-   */
+  // Eject the disc.
+  //
+  // Args:
+  //     verbose (bool): when true print details from commands (default: false)
+  //
+  // Returns:
+  //     (int): command status (-1 means fail)
+
   if (verbose)
     printf("dvdcc:devices:Dvd:Eject() Ejecting the disc.\n");
 
@@ -166,17 +166,17 @@ int Dvd::Eject(bool verbose = false) {
 }; // END Dvd::Eject()
 
 int Dvd::ReadRawSectorCache(int sector, unsigned char *buffer, bool verbose = false) {
-  /* Read all raw sectors from the 80 sector cache.
-   *
-   * Args:
-   *     sector (int): starting sector relative to the first disc sector
-   *     buffer (unsigned char *): pointer to the buffer where bytes
-   *                               returned by the command are placed
-   *     verbose (bool): when true print command details (default: false)
-   *
-   * Returns:
-   *     (int): command status (-1 means fail)
-   */
+  // Read all raw sectors from the 80 sector cache.
+  //
+  // Args:
+  //     sector (int): starting sector relative to the first disc sector
+  //     buffer (unsigned char *): pointer to the buffer where bytes
+  //                               returned by the command are placed
+  //     verbose (bool): when true print command details (default: false)
+  //
+  // Returns:
+  //     (int): command status (-1 means fail)
+
   int status;
   const int buflen = constants::RAW_SECTOR_SIZE * constants::SECTORS_PER_CACHE;
 
@@ -203,27 +203,27 @@ int Dvd::ReadRawSectorCache(int sector, unsigned char *buffer, bool verbose = fa
 }; // END Dvd::ReadRawSectorCache()
 
 unsigned int Dvd::RawSectorId(unsigned char *raw_sector) {
-  /* Return the sector id number from the first 4 bytes of raw sector data.
-   *
-   * Args:
-   *     raw_sector (unsigned char *): raw sector data
-   *
-   * Returns:
-   *     (unsigned int): sector id number
-   */
+  // Return the sector id number from the first 4 bytes of raw sector data.
+  //
+  // Args:
+  //     raw_sector (unsigned char *): raw sector data
+  //
+  // Returns:
+  //     (unsigned int): sector id number
+
   return (raw_sector[0] << 24) + (raw_sector[1] << 16) + (raw_sector[2] << 8) + raw_sector[3];
 
 }; // END Dvd::RawSectorId()
 
 unsigned int Dvd::RawSectorEdc(unsigned char *raw_sector) {
-  /* Return the error detection code from the last 4 bytes of raw sector data.
-   *
-   * Args:
-   *     raw_sector (unsigned char *): raw sector data
-   *
-   * Returns:
-   *     (unsigned int): error detection code
-   */
+  // Return the error detection code from the last 4 bytes of raw sector data.
+  //
+  // Args:
+  //     raw_sector (unsigned char *): raw sector data
+  //
+  // Returns:
+  //     (unsigned int): error detection code
+
   unsigned char *edc_bytes = raw_sector + constants::RAW_SECTOR_SIZE - 4;
 
   return (edc_bytes[0] << 24) + (edc_bytes[1] << 16) + (edc_bytes[2] << 8) + edc_bytes[3];
@@ -231,22 +231,22 @@ unsigned int Dvd::RawSectorEdc(unsigned char *raw_sector) {
 }; // END Dvd::RawSectorEdc()
 
 unsigned int Dvd::CypherIndex(unsigned int block) {
-  /* Return the cypher array index for a sector block.
-   *
-   * Blocks >= 1 use a repeating sequence of cypher values
-   * from 1 to cypher_number. The first block beyond cypher_number
-   * loops back to 1 to restart the sequence.
-   *
-   * Block 0 uses a unique cypher to decode disc information.
-   * The cypher index for this block is handled as a separate
-   * return value because it is not part of the repeating sequence.
-   *
-   * Args:
-   *     block (unsigned int): block number
-   *
-   * Returns:
-   *     (unsigned int): cypher index
-   */
+  // Return the cypher array index for a sector block.
+  //
+  // Blocks >= 1 use a repeating sequence of cypher values
+  // from 1 to cypher_number. The first block beyond cypher_number
+  // loops back to 1 to restart the sequence.
+  //
+  // Block 0 uses a unique cypher to decode disc information.
+  // The cypher index for this block is handled as a separate
+  // return value because it is not part of the repeating sequence.
+  //
+  // Args:
+  //     block (unsigned int): block number
+  //
+  // Returns:
+  //     (unsigned int): cypher index
+
   if (block)
     return (block - 1) % (cypher_number - 1) + 1;
   return 0;
@@ -254,18 +254,18 @@ unsigned int Dvd::CypherIndex(unsigned int block) {
 }; // END Dvd::CypherIndex()
 
 int Dvd::FindKeys(unsigned int blocks = 20, bool verbose = false) {
-  /* Find the cypher keys needed to decode raw sector data.
-   * Should only need 20 blocks since there is usually one
-   * key used to decode the first block followed by a
-   * repeating sequence of 16 keys for the remaining blocks.
-   *
-   * Args:
-   *     blocks (int): number of blocks to check starting from the first sector (default: 20)
-   *     verbose (bool): when true print command details (default: false)
-   *
-   * Returns:
-   *     (int): command status (0 = success, -1 = fail)
-   */
+  // Find the cypher keys needed to decode raw sector data.
+  // Should only need 20 blocks since there is usually one
+  // key used to decode the first block followed by a
+  // repeating sequence of 16 keys for the remaining blocks.
+  //
+  // Args:
+  //     blocks (int): number of blocks to check starting from the first sector (default: 20)
+  //     verbose (bool): when true print command details (default: false)
+  //
+  // Returns:
+  //     (int): command status (0 = success, -1 = fail)
+
   Cypher *cypher;
 
   unsigned int raw_sector_id, raw_edc, tmp_edc;
@@ -357,14 +357,14 @@ int Dvd::FindKeys(unsigned int blocks = 20, bool verbose = false) {
 }; // END Dvd::FindKeys()
 
 int Dvd::FindDiscType(bool verbose = false) {
-  /* Find the disc type and sector number for a disc.
-   *
-   * Args:
-   *     verbose (bool): when true print command details (default: false)
-   *
-   * Returns:
-   *     (int): command status (0 = success, -1 = fail)
-   */
+  // Find the disc type and sector number for a disc.
+  //
+  // Args:
+  //     verbose (bool): when true print command details (default: false).
+  //
+  // Returns:
+  //     (int): command status (0 = success, -1 = fail)
+
   unsigned char buffer[constants::SECTOR_SIZE];
   struct request_sense sense;
 
@@ -394,14 +394,14 @@ int Dvd::FindDiscType(bool verbose = false) {
 }; // END Dvd::FindDiscType()
 
 int Dvd::DisplayMetaData(bool verbose = false) {
-  /* Display disc metadata on-screen
-   *
-   * Args:
-   *     verbose (bool): when true print command details (default: false)
-   *
-   * Returns:
-   *     (int): command status (0 = success, -1 = fail)
-   */
+  // Display disc metadata on-screen
+  //
+  // Args:
+  //     verbose (bool): when true print command details (default: false)
+  //
+  // Returns:
+  //     (int): command status (0 = success, -1 = fail)
+
   double gb = 1024 * 1024 * 1024;
 
   double iso_size_gb = double(sector_number) * constants::SECTOR_SIZE / gb;
@@ -485,17 +485,17 @@ int Dvd::DisplayMetaData(bool verbose = false) {
 }; // END Dvd::DisplayMetaData()
 
 int Dvd::ClearSectorCache(int sector, bool verbose = false) {
-  /* Clear the current sector cache by seeking to the starting sector of
-   * the farthest full cache block. This will either be sector 0 or one less
-   * than the total number of cache blocks.
-   *
-   * Args:
-   *     sector (int): current sector number
-   *     verbose (bool): when true print command details (default: false)
-   *
-   * Returns:
-   *     (int): command status (0 = success, -1 = fail)
-   */
+  // Clear the current sector cache by seeking to the starting sector of
+  // the farthest full cache block. This will either be sector 0 or one less
+  // than the total number of cache blocks.
+  //
+  // Args:
+  //     sector (int): current sector number
+  //     verbose (bool): when true print command details (default: false)
+  //
+  // Returns:
+  //     (int): command status (0 = success, -1 = fail)
+
   unsigned int cache_block_number = sector_number / constants::SECTORS_PER_CACHE;
   unsigned int last_cache_sector = (cache_block_number - 1) * constants::SECTORS_PER_CACHE;
   unsigned int farthest_sector = sector < last_cache_sector - sector ? last_cache_sector : 0;
@@ -507,6 +507,13 @@ int Dvd::ClearSectorCache(int sector, bool verbose = false) {
 }; // END Dvd::ClearSectorCache()
 
 int Dvd::PollPowerState(bool verbose = false) {
+  // Get the drive power state.
+  //
+  // Args:
+  //     verbose (bool): when true print command details (default: false)
+  //
+  // Returns:
+  //     (int): power state (1 = Active, 2 = Idle, 3 = Standy, 4 = Sleep)
 
   const int buflen = 16;
   unsigned char buffer[buflen];
@@ -523,10 +530,16 @@ int Dvd::PollPowerState(bool verbose = false) {
 }; // END Dvd::PollPowerState()
 
 int Dvd::PollReady(bool verbose = false) {
+  // Get the test unit ready status.
+  //
+  // Args:
+  //     verbose (bool): when true print command details (default: false)
+  //
+  // Returns:
+  //     (int): status (0 = ready to receive commands, -1 = not ready)
 
   return commands::TestUnitReady(fd, timeout, verbose, NULL);
 
 }; // END Dvd::PollReady()
-
 
 #endif // DVDCC_DEVICES_H_
