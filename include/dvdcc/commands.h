@@ -64,7 +64,7 @@ int Execute(int fd, unsigned char *cmd, unsigned char *buffer,
   cgc.buflen = buflen;
   cgc.sense = &sense;
   cgc.data_direction = CGC_DATA_READ;
-  cgc.timeout = timeout * 1000;
+  cgc.timeout = timeout;
 
   if (verbose) {
     printf("dvdcc:commands:Execute() Executing MMC command");
