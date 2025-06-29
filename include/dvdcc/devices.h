@@ -497,12 +497,12 @@ int Dvd::ClearSectorCache(int sector, bool verbose = false) {
   //     (int): command status (0 = success, -1 = fail)
 
   unsigned int cache_block_number = sector_number / constants::SECTORS_PER_CACHE;
-  unsigned int last_cache_sector = (cache_block_number - 1) * constants::SECTORS_PER_CACHE;
-  unsigned int farthest_sector = sector < last_cache_sector - sector ? last_cache_sector : 0;
+  unsigned int current_block = sector / constants::SECTORS_PER_CACHE;
+  unsigned int adjacent_block = current_block < cache_block_number - 1 ? current_block + 1 : current_block - 1;
 
   unsigned char buffer[constants::SECTOR_SIZE * constants::SECTORS_PER_CACHE];
 
-  return commands::ReadSectors(fd, buffer, farthest_sector, constants::SECTORS_PER_CACHE, true, timeout, verbose, NULL);
+  return commands::ReadSectors(fd, buffer, adjacent_block * constants::SECTORS_PER_CACHE, constants::SECTORS_PER_CACHE, true, timeout, verbose, NULL);
 
 }; // END Dvd::ClearSectorCache()
 
