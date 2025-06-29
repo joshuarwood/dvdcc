@@ -30,6 +30,43 @@
 #include "dvdcc/commands.h"
 #include <iostream>
 
+FILE *OpenAndResume(char *path, int resume,
+                    unsigned int *start_sector, unsigned int sector_size) {
+  // Method to open and resume from an existing file or create new file.
+  //
+  // The resume method starts at the last file sector + 1
+  // to avoid duplicating the last sector in the file.
+  //
+  // Args:
+  //     path (char *): path to the file
+  //     resume (int): set to 1 when resuming, otherwise 0
+  //     start_sector (unsigned int *): pointer to the starting sector used
+  //                                    in the backup loop.
+  //     sector_size (unsigned int): size of the file sectors in bytes
+
+  // resume from last file sector + 1
+  if (resume) {
+    FILE *fp = fopen(path, "a+b");
+    fseek(fp, 0, SEEK_END);
+    *start_sector = ftell(fp) / sector_size + 1;
+    return fp;
+  } // END if (resume)
+
+  // otherwise ensure we don't overwrite
+  if (access(path, F_OK) == 0) {
+    printf("dvdcc:main() File already exists. Delete or use --resume.\n");
+    printf("dvdcc:main() Exiting...\n");
+    exit(0);
+  } // END if (access...)
+
+  // new file starting from 0
+  FILE *fp = fopen(path, "wb");
+  *start_sector = 0;
+
+  return fp;
+
+}; // END OpenAndResume()
+
 int main(int argc, char **argv) {
 
   // welcome message
@@ -106,9 +143,9 @@ int main(int argc, char **argv) {
     if (dvd.FindKeys(20, options.verbose) == 0)
       break;
 
-    // enter standy to try flushing cache
-    dvd.Stop();
+    // try flushing cache and retrying
     dvd.ClearSectorCache(0, options.verbose);
+
     if (retry++ == 5) {
       printf("dvdcc:main() Reached maximum retry for FindKeys().\n");
       printf("dvdcc:main() Exiting...\n");
@@ -128,26 +165,25 @@ int main(int argc, char **argv) {
 
   // open file for iso backup
   FILE *fiso;
+  unsigned int iso_start_sector;
   if (options.iso) {
     printf(" ISO path: %s\n", options.iso);
-    if (options.resume == 0 && access(options.iso, F_OK) == 0) {
-      printf("dvdcc:main() File already exists. Delete or use --resume.\n");
-      printf("dvdcc:main() Exiting...\n");
-      return 0;
-    }
-    fiso = fopen(options.iso, options.resume ? "a+b" : "wb");
+    fiso = OpenAndResume(options.iso, options.resume, &iso_start_sector, constants::SECTOR_SIZE);
   } // END if (options.iso)
 
   // open file for raw backup
   FILE *fraw;
+  unsigned int raw_start_sector;
   if (options.raw) {
     printf(" RAW path: %s\n", options.raw);
-    if (options.resume == 0 && access(options.raw, F_OK) == 0) {
-      printf("dvdcc:main() File already exists. Delete or use --resume.\n");
+    fraw = OpenAndResume(options.raw, options.resume, &raw_start_sector, constants::RAW_SECTOR_SIZE);
+    // confirm start sectors match when using ISO+RAW
+    if (options.iso && raw_start_sector != iso_start_sector) {
+      printf("dvdcc:main() Cannot resume. RAW start sector %lu differs from ISO start sector %lu.\n",
+             raw_start_sector, iso_start_sector);
       printf("dvdcc:main() Exiting...\n");
       return 0;
     }
-    fraw = fopen(options.raw, options.resume ? "a+b" : "wb");
   } // END if (options.raw)
   printf("\n");
 
@@ -156,18 +192,7 @@ int main(int argc, char **argv) {
   unsigned char buffer[buflen];
   unsigned char *raw_sector;
   unsigned int i, raw_edc, edc_length = constants::RAW_SECTOR_SIZE - 4;
-
-  // determine starting point based on resume option
-  unsigned int start_sector = 0;
-  if (options.resume) {
-    if (options.iso) { // get start sector from iso when present
-      fseek(fiso, 0, SEEK_END);
-      start_sector = ftell(fiso) / constants::SECTOR_SIZE;
-    } else {
-      fseek(fraw, 0, SEEK_END);
-      start_sector = ftell(fraw) / constants::RAW_SECTOR_SIZE;
-    }
-  } // END if (options.resume)
+  unsigned int start_sector = options.iso ? iso_start_sector : raw_start_sector;
 
   // prepare progress tracker
   strcpy(progress.description, "Progress");
@@ -188,6 +213,10 @@ int main(int argc, char **argv) {
 
     // point to the raw sector data
     raw_sector = buffer + sector % constants::SECTORS_PER_CACHE * constants::RAW_SECTOR_SIZE;
+
+    //for (int j=0; j<16; j++)
+    //  printf(" %02x", raw_sector[j]);
+    //printf("\n");
 
     // try decoding the raw sector data
     for (retry = 0; retry < 20; retry++) {
@@ -211,13 +240,17 @@ int main(int argc, char **argv) {
       }
 
       // decode failed so retry after clearing cache
-      dvd.Stop();
       dvd.ClearSectorCache(sector, options.verbose);
       dvd.ReadRawSectorCache(sector, buffer, options.verbose);
 
+      //for (int j=0; j<16; j++)
+      //  printf(" %02x", raw_sector[j]);
+      //printf("\n");
+
     } // END for (retry)
 
-    progress.Update(sector, dvd.sector_number);
+    if (sector % constants::SECTORS_PER_CACHE == 0)
+      progress.Update(sector - start_sector, dvd.sector_number - start_sector);
 
   } // END for (sector)
   progress.Finish();

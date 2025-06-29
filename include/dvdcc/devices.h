@@ -177,15 +177,20 @@ int Dvd::ReadRawSectorCache(int sector, unsigned char *buffer, bool verbose = fa
   // Returns:
   //     (int): command status (-1 means fail)
 
-  int status;
+  int status, start_sector;
   const int buflen = constants::RAW_SECTOR_SIZE * constants::SECTORS_PER_CACHE;
 
+  // force the start sector to be a multiple of SECTORS_PER_CACHE
+  // so that we can consistently reference the location of a sector
+  // within the returned buffer using (sector % SECTORS_PER_CACHE)
+  start_sector = (sector / constants::SECTORS_PER_CACHE) * constants::SECTORS_PER_CACHE;
+
   if (verbose)
-    printf("dvdcc:devices:Dvd:ReadRawSectorCache() Reading from sector %d.\n", sector);
+    printf("dvdcc:devices:Dvd:ReadRawSectorCache() Reading cache with sector %d.\n", sector);
 
   // perform a streaming read to fill the cache with 5 blocks / 80 sectors
   // starting from sector. Note: reading first sector to fills the full cache.
-  if (commands::ReadSectors(fd, buffer, sector, 1, true, timeout, verbose, NULL) != 0)
+  if (commands::ReadSectors(fd, buffer, start_sector, 1, true, timeout, verbose, NULL) != 0)
     return -1;
 
   // clear the buffer contents
@@ -502,7 +507,7 @@ int Dvd::ClearSectorCache(int sector, bool verbose = false) {
 
   unsigned char buffer[constants::SECTOR_SIZE];
 
-  return commands::ReadSectors(fd, buffer, farthest_sector, 1, true, timeout, verbose, NULL);
+  return commands::ReadSectors(fd, buffer, farthest_sector, constants::SECTORS_PER_CACHE, true, timeout, verbose, NULL);
 
 }; // END Dvd::ClearSectorCache()
 
