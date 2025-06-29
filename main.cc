@@ -34,9 +34,6 @@ FILE *OpenAndResume(char *path, int resume,
                     unsigned int *start_sector, unsigned int sector_size) {
   // Method to open and resume from an existing file or create new file.
   //
-  // The resume method starts at the last file sector + 1
-  // to avoid duplicating the last sector in the file.
-  //
   // Args:
   //     path (char *): path to the file
   //     resume (int): set to 1 when resuming, otherwise 0
@@ -44,11 +41,11 @@ FILE *OpenAndResume(char *path, int resume,
   //                                    in the backup loop.
   //     sector_size (unsigned int): size of the file sectors in bytes
 
-  // resume from last file sector + 1
+  // resume from last file sector
   if (resume) {
     FILE *fp = fopen(path, "a+b");
     fseek(fp, 0, SEEK_END);
-    *start_sector = ftell(fp) / sector_size + 1;
+    *start_sector = ftell(fp) / sector_size;
     return fp;
   } // END if (resume)
 
@@ -194,6 +191,9 @@ int main(int argc, char **argv) {
   unsigned int i, raw_edc, edc_length = constants::RAW_SECTOR_SIZE - 4;
   unsigned int start_sector = options.iso ? iso_start_sector : raw_start_sector;
 
+  if (options.resume)
+    printf("Resuming from sector %lu...\n\n", start_sector);
+
   // prepare progress tracker
   strcpy(progress.description, "Progress");
   progress.only_elapsed = false;
@@ -249,8 +249,7 @@ int main(int argc, char **argv) {
 
     } // END for (retry)
 
-    if (sector % constants::SECTORS_PER_CACHE == 0)
-      progress.Update(sector - start_sector, dvd.sector_number - start_sector);
+    progress.Update(sector - start_sector, dvd.sector_number - start_sector);
 
   } // END for (sector)
   progress.Finish();
