@@ -177,7 +177,7 @@ int Dvd::ReadRawSectorCache(int sector, unsigned char *buffer, bool verbose = fa
   // Returns:
   //     (int): command status (-1 means fail)
 
-  int status, start_sector;
+  int status;
   const int buflen = constants::RAW_SECTOR_SIZE * constants::SECTORS_PER_CACHE;
 
   if (verbose)
