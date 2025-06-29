@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
   unsigned char buffer[buflen];
   unsigned char *raw_sector;
   unsigned int i, raw_edc, edc_length = constants::RAW_SECTOR_SIZE - 4;
-  unsigned int start_sector = options.iso ? iso_start_sector : raw_start_sector;
+  unsigned int start_sector = options.iso ? iso_start_sector : raw_start_sector, cache_start;
 
   if (options.resume)
     printf("Resuming from sector %lu...\n\n", start_sector);
@@ -204,7 +204,8 @@ int main(int argc, char **argv) {
 
     // perform cache read if this is the start of a cache block or a resume
     if ((sector % constants::SECTORS_PER_CACHE == 0) || options.resume) {
-      dvd.ReadRawSectorCache(sector, buffer, options.verbose);
+      cache_start = (sector / constants::SECTORS_PER_CACHE) * constants::SECTORS_PER_CACHE;
+      dvd.ReadRawSectorCache(cache_start, buffer, options.verbose);
       options.resume = 0;
     }
 
@@ -240,8 +241,8 @@ int main(int argc, char **argv) {
       }
 
       // decode failed so retry after clearing cache
-      dvd.ClearSectorCache(sector, options.verbose);
-      dvd.ReadRawSectorCache(sector, buffer, options.verbose);
+      dvd.ClearSectorCache(cache_start, options.verbose);
+      dvd.ReadRawSectorCache(cache_start, buffer, options.verbose);
 
       //for (int j=0; j<16; j++)
       //  printf(" %02x", raw_sector[j]);

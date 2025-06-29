@@ -180,11 +180,6 @@ int Dvd::ReadRawSectorCache(int sector, unsigned char *buffer, bool verbose = fa
   int status, start_sector;
   const int buflen = constants::RAW_SECTOR_SIZE * constants::SECTORS_PER_CACHE;
 
-  // force the start sector to be a multiple of SECTORS_PER_CACHE
-  // so that we can consistently reference the location of a sector
-  // within the returned buffer using (sector % SECTORS_PER_CACHE)
-  start_sector = (sector / constants::SECTORS_PER_CACHE) * constants::SECTORS_PER_CACHE;
-
   if (verbose)
     printf("dvdcc:devices:Dvd:ReadRawSectorCache() Reading cache with sector %d.\n", sector);
 
