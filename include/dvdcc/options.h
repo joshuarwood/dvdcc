@@ -30,7 +30,7 @@
 class Options {
  public:
   Options()
-    : load(0), eject(0), resume(0), verbose(0), iso(NULL), raw(NULL), device_path(NULL) {};
+    : load(0), eject(0), resume(0), timeout(100), verbose(0), iso(NULL), raw(NULL), device_path(NULL) {};
   ~Options() { free(iso); free(raw); free(device_path); };
 
   void Parse(int argc, char **argv);
@@ -43,6 +43,8 @@ class Options {
            "      --load        load the disc\n"
            "  -i, --iso         create ISO backup\n"
            "  -r, --raw         create RAW backup\n"
+           "  -t, --timeout     command timeout in clock cycles\n"
+           "                    (example: 100 = 1 second on systems where `getconf CLK_TCK` = 100)\n"
            "      --resume      resume disc backup to existing file(s)\n"
            "      --verbose     print full command details\n"
            "      --help        display this help and exit\n");
@@ -51,6 +53,7 @@ class Options {
   int load;
   int eject;
   int resume;
+  int timeout;
   int verbose;
 
   char *iso;
@@ -83,11 +86,12 @@ void Options::Parse(int argc, char **argv) {
       {"iso",     required_argument, 0,        'i'},
       {"raw",     required_argument, 0,        'r'},
       {"resume",  no_argument,       &resume,  1},
+      {"timeout", required_argument, 0,        't'},
       {"verbose", no_argument,       &verbose, 1},
       {0, 0, 0, 0}
     };
 
-    int c = getopt_long(argc, argv, "hd:i:r:", long_options, NULL);
+    int c = getopt_long(argc, argv, "hd:i:r:t:", long_options, NULL);
 
     if (c == -1)
       break;
@@ -114,6 +118,10 @@ void Options::Parse(int argc, char **argv) {
 
       case 'r':
         raw = strdup(optarg);
+        break;
+
+      case 't':
+        timeout = atoi(optarg);
         break;
 
       case '?':

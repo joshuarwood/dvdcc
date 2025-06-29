@@ -76,8 +76,8 @@ int main(int argc, char **argv) {
   Options options;
   options.Parse(argc, argv);
 
-  // open drive with 1 second timeout setting
-  Dvd dvd(options.device_path, 1, options.verbose);
+  // open the drive
+  Dvd dvd(options.device_path, options.timeout, options.verbose);
   printf("Found drive model: %s\n", dvd.model);
 
   // mutually exclusive load/eject commands
@@ -142,6 +142,7 @@ int main(int argc, char **argv) {
 
     // try flushing cache and retrying
     dvd.ClearSectorCache(0, options.verbose);
+    sleep(1);
 
     if (retry++ == 5) {
       printf("dvdcc:main() Reached maximum retry for FindKeys().\n");
@@ -242,6 +243,7 @@ int main(int argc, char **argv) {
 
       // decode failed so retry after clearing cache
       dvd.ClearSectorCache(cache_start, options.verbose);
+      sleep(1);
       dvd.ReadRawSectorCache(cache_start, buffer, options.verbose);
 
       //for (int j=0; j<16; j++)
