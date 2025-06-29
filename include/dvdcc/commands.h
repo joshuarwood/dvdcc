@@ -120,7 +120,7 @@ int ReadSectors(int fd, unsigned char *buffer, int sector, int sectors,
   cmd[ 9] = (unsigned char) (sectors & 0x000000FF);         // sectors LSB
   cmd[10] = streaming ? 0x80 : 0;                           // streaming bit
 
-  return Execute(fd, cmd, buffer, sectors * 2048, timeout, verbose, scsi_sense);
+  return Execute(fd, cmd, buffer, sectors * constants::SECTOR_SIZE, timeout, verbose, scsi_sense);
 
 }; // END commands::ReadSectors()
 

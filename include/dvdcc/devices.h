@@ -185,7 +185,7 @@ int Dvd::ReadRawSectorCache(int sector, unsigned char *buffer, bool verbose = fa
 
   // perform a streaming read to fill the cache with 5 blocks / 80 sectors
   // starting from sector. Note: reading first sector to fills the full cache.
-  if (commands::ReadSectors(fd, buffer, start_sector, 1, true, timeout, verbose, NULL) != 0)
+  if (commands::ReadSectors(fd, buffer, sector, 1, true, timeout, verbose, NULL) != 0)
     return -1;
 
   // clear the buffer contents
@@ -500,7 +500,7 @@ int Dvd::ClearSectorCache(int sector, bool verbose = false) {
   unsigned int last_cache_sector = (cache_block_number - 1) * constants::SECTORS_PER_CACHE;
   unsigned int farthest_sector = sector < last_cache_sector - sector ? last_cache_sector : 0;
 
-  unsigned char buffer[constants::SECTOR_SIZE];
+  unsigned char buffer[constants::SECTOR_SIZE * constants::SECTORS_PER_CACHE];
 
   return commands::ReadSectors(fd, buffer, farthest_sector, constants::SECTORS_PER_CACHE, true, timeout, verbose, NULL);
 
