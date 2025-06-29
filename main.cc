@@ -216,10 +216,6 @@ int main(int argc, char **argv) {
     // point to the raw sector data
     raw_sector = buffer + sector % constants::SECTORS_PER_CACHE * constants::RAW_SECTOR_SIZE;
 
-    //for (int j=0; j<16; j++)
-    //  printf(" %02x", raw_sector[j]);
-    //printf("\n");
-
     // try decoding the raw sector data
     for (retry = 0; retry < 20; retry++) {
       
@@ -245,10 +241,6 @@ int main(int argc, char **argv) {
       dvd.ClearSectorCache(cache_start, options.verbose);
       sleep(1);
       dvd.ReadRawSectorCache(cache_start, buffer, options.verbose);
-
-      //for (int j=0; j<16; j++)
-      //  printf(" %02x", raw_sector[j]);
-      //printf("\n");
 
     } // END for (retry)
 
