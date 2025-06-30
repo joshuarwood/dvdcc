@@ -37,6 +37,8 @@ portions of the executable run under the current user permissions.
 
 # Example Output
 ```
+user@user:$ ./dvdcc --device /dev/sr0 --iso "NFS ProStreet.iso"
+
 dvdcc version 0.2.0, Copyright (C) 2025 Josh Wood
 dvdcc comes with ABSOLUTELY NO WARRANTY; for details see LICENSE.
 This is free software, and you are welcome to redistribute it
@@ -85,6 +87,15 @@ Publisher..........: 69 (Electronic Arts)
 Version............: 1.01
 Game title.........: Need for Speed(TM) ProStreet
 Contains update....: Yes (0x690dbcd4)
+
+Backing up content...
+
+ ISO path: NFS ProStreet.iso
+
+Progress ==================== 100.0% | elapsed 06:33:49 remaining 00:00:00
+
+user@user:$ md5sum "NFS ProStreet.iso" 
+a44d380a3e421d0ed96841baf8d359ac  NFS ProStreet.iso
 ```
 
 # Credits
