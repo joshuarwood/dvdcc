@@ -24,11 +24,28 @@ double check the summaries provided here.
 Communication with the DVD drive relies on the
 [Small Computer System Interface (SCSI)](https://en.wikipedia.org/wiki/SCSI)
 set of standards. These standards define a set of
-12 byte commands that can be issued to the drive
-in order to control it. The commands themselves are
-maintained by [Technical Committee T10](https://www.t10.org/index.html)
+commands that can be issued to the drive in order to control it.
+The commands themselves are maintained by [Technical Committee T10](https://www.t10.org/index.html),
 which is responsible for approving and maintaining
 documentation for the allowed command formats.
+
+The command format uses a series of 12 command bytes that are sent
+to the DVD drive. The first byte denotes the command type and the
+remaining bytes provide additional command information. For example,
+the INQUIRY command (0x12) for retrieving model information from the drive
+consists of the following 12 bytes, provided in hexidecimal format:
+
+| byte  |    0 |    1 |    2 |    3 |    4 |    5 |    6 |    7 |    8 |    9 |   10 |   11 |
+|-------|------|------|------|------|------|------|------|------|------|------|------|------|
+| value | 0x12 | 0x00 | 0x00 | 0x00 | 0x20 | 0x00 | 0x00 | 0x00 | 0x00 | 0x00 | 0x00 | 0x00 |
+
+where byte 0 = 0x12 tells the drive to execute the INQUIRY command and
+byte 4 = 0x20 denotes that the string returned from the drive will be 36 bytes long.
+
+The dvdcc code implements these commands in the [commands.h](https://github.com/joshuarwood/dvdcc/blob/main/include/dvdcc/commands.h) header file
+using the cgc_generic_command struct from [linux/cdrom.h](https://github.com/torvalds/linux/blob/master/include/uapi/linux/cdrom.h).
+These commands are executed using ioctl with access to error codes through [sense keys](https://www.t10.org/lists/1spc-lst.htm) provided
+via a request_sense struct.
 
 # DVD Data Format
 
@@ -71,4 +88,5 @@ Describe formulation of CRC as long division using bit math
 
 1. [friidump project](https://github.com/bradenmcd/friidump)
 2. [Understanding Wii/Gamecube DVD formats](https://hitmen.c02.at/files/docs/gc/Ingenieria-Inversa-Understanding_WII_Gamecube_Optical_Disks.html)
-3. [SCSI MMC-5 Reference Manual](https://www.13thmonkey.org/documentation/SCSI/mmc5r02c.pdf)
+3. [SCSI SPC-3 Reference Manual](https://www.13thmonkey.org/documentation/SCSI/spc3r23.pdf)
+4. [SCSI MMC-5 Reference Manual](https://www.13thmonkey.org/documentation/SCSI/mmc5r02c.pdf)
