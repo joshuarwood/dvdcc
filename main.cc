@@ -43,9 +43,22 @@ FILE *OpenAndResume(char *path, int resume,
 
   // resume from last file sector
   if (resume) {
+
     FILE *fp = fopen(path, "a+b");
+
+    // get file size
     fseek(fp, 0, SEEK_END);
-    *start_sector = ftell(fp) / sector_size;
+    unsigned int fsize = ftell(fp);
+
+    // ensure it is a multiple of sector size
+    if (fsize % sector_size != 0) {
+      printf("dvdcc:main() Cannot resume from incomplete sector. Trim file to nearest %lu bytes before resuming.\n", sector_size);
+      printf("dvdcc:main() Exiting...\n");
+      exit(0);
+    }
+
+    *start_sector = fsize / sector_size;
+
     return fp;
   } // END if (resume)
 
@@ -140,8 +153,8 @@ int main(int argc, char **argv) {
     if (dvd.FindKeys(20, options.verbose) == 0)
       break;
 
-    // try flushing cache and retrying
-    dvd.ClearSectorCache(0, options.verbose);
+    // try flushing cache to point beyond key finding and retrying
+    dvd.ClearSectorCache(32, options.verbose);
     sleep(1);
 
     if (retry++ == 5) {
